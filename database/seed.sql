@@ -1,13 +1,4 @@
 -- =====================================================
--- SEED.SQL — Gestión del Fin
--- EIF209 Programación IV
--- Universidad Nacional Sede Regional Brunca
--- Ejecutar DESPUÉS del DDL completo
--- =====================================================
-
-USE gestion_del_fin;
-
--- =====================================================
 -- 1. CAMPAMENTOS
 -- =====================================================
 
