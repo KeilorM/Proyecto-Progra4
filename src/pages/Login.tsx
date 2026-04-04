@@ -27,6 +27,7 @@ export default function Login() {
       // Guardar token y rol para uso en toda la app
       localStorage.setItem("token", data.token)
       localStorage.setItem("rol", data.rol)
+      localStorage.setItem("campamento", String(data.campamento))
 
       switch (data.rol) {
         case "ADMIN":
