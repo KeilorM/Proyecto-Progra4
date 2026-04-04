@@ -1,46 +1,59 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { login } from "../services/api"
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault()
 
     if (!email || !password) {
-      setError("Debes llenar ambos campos");
-      return;
+      setError("Debes llenar ambos campos")
+      return
     }
 
-    setLoading(true);
-    setError("");
+    setLoading(true)
+    setError("")
 
-    const res = await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const data = await login(email, password)
 
-    const data = await res.json();
-    setLoading(false);
+      // Guardar token y rol para uso en toda la app
+      localStorage.setItem("token", data.token)
+      localStorage.setItem("rol", data.rol)
 
-    if (!res.ok) {
-      setError(data.error);
-      return;
+      switch (data.rol) {
+        case "ADMIN":
+          navigate("/admin")
+          break
+        case "TRABAJADOR":
+          navigate("/trabajador")
+          break
+        case "GESTOR_RECURSOS":
+          navigate("/bodega")
+          break
+        case "ENCARGADO_VIAJES":
+          navigate("/exploraciones")
+          break
+        default:
+          setError("Rol no reconocido")
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError("Error desconocido")
+      }
+    } finally {
+      setLoading(false)
     }
-
-    switch (data.rol) {
-      case "ADMIN":            navigate("/admin");         break;
-      case "TRABAJADOR":       navigate("/trabajador");    break;
-      case "GESTOR_RECURSOS":  navigate("/bodega");        break;
-      case "ENCARGADO_VIAJES": navigate("/exploraciones"); break;
-    }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 text-white">
@@ -82,5 +95,5 @@ export default function Login() {
 
       </div>
     </div>
-  );
+  )
 }
