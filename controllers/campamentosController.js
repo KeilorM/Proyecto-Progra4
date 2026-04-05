@@ -3,9 +3,9 @@ import { registrarLog } from "../middleware/logger.js";
 
 export const getCampamentos = async (req, res) => {
   try {
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT id, nombre, ubicacion, estado, capacidad_maxima, descripcion
-       FROM Campamento WHERE estado = 'ACTIVO'`
+       FROM campamento WHERE estado = 'ACTIVO'`
     );
 
     res.json(rows);
@@ -26,13 +26,14 @@ export const crearSolicitud = async (req, res) => {
 
     const tiposValidos = ["RECURSOS", "PERSONAS"];
     if (!tiposValidos.includes(tipo_solicitud)) {
-      return res.status(400).json({ error: "tipo_solicitud debe ser RECURSOS, PERSONAS o AYUDA" });
+      return res.status(400).json({ error: "tipo_solicitud debe ser RECURSOS o PERSONAS" });
     }
 
-    const [result] = await pool.query(
-      `INSERT INTO SolicitudRecurso
+    const { rows } = await pool.query(
+      `INSERT INTO solicitudrecurso
         (campamento_origen_id, campamento_destino_id, tipo_solicitud, detalle, estado)
-       VALUES (?, ?, ?, ?, 'PENDIENTE')`,
+       VALUES ($1, $2, $3, $4, 'PENDIENTE')
+       RETURNING id`,
       [campamento_origen_id, campamento_destino_id, tipo_solicitud, JSON.stringify(detalle)]
     );
 
@@ -40,13 +41,13 @@ export const crearSolicitud = async (req, res) => {
       usuario_id: req.user.id,
       campamento_id: campamento_origen_id,
       accion: "CREAR_SOLICITUD",
-      entidad_afectada: "SolicitudRecurso",
-      entidad_id: result.insertId,
+      entidad_afectada: "solicitudrecurso",
+      entidad_id: rows[0].id,
       detalle: { campamento_destino_id, tipo_solicitud },
       ip_origen: req.ip,
     });
 
-    res.status(201).json({ mensaje: "Solicitud enviada", id: result.insertId });
+    res.status(201).json({ mensaje: "Solicitud enviada", id: rows[0].id });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error servidor" });
@@ -65,9 +66,9 @@ export const responderSolicitud = async (req, res) => {
       return res.status(400).json({ error: "estado debe ser APROBADA o RECHAZADA" });
     }
 
-    const [solicitud] = await pool.query(
-      `SELECT * FROM SolicitudRecurso 
-       WHERE id = ? AND campamento_destino_id = ? AND estado = 'PENDIENTE'`,
+    const { rows: solicitud } = await pool.query(
+      `SELECT * FROM solicitudrecurso 
+       WHERE id = $1 AND campamento_destino_id = $2 AND estado = 'PENDIENTE'`,
       [id, campamento_id]
     );
 
@@ -76,17 +77,17 @@ export const responderSolicitud = async (req, res) => {
     }
 
     await pool.query(
-      `UPDATE SolicitudRecurso 
-       SET estado = ?, aprobado_por_usuario_id = ?, fecha_respuesta = NOW(), nota_respuesta = ?
-       WHERE id = ?`,
+      `UPDATE solicitudrecurso 
+       SET estado = $1, aprobado_por_usuario_id = $2, fecha_respuesta = NOW(), nota_respuesta = $3
+       WHERE id = $4`,
       [estado, usuario_id, nota_respuesta, id]
     );
 
     if (estado === "APROBADA") {
       await pool.query(
-        `INSERT INTO Traslado
+        `INSERT INTO traslado
           (solicitud_id, campamento_origen_id, campamento_destino_id, fecha_salida_programada, estado, detalle_recursos, raciones_viaje)
-         VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 1 DAY), 'PENDIENTE_SALIDA', ?, 0)`,
+         VALUES ($1, $2, $3, NOW() + INTERVAL '1 day', 'PENDIENTE_SALIDA', $4, 0)`,
         [id, solicitud[0].campamento_origen_id, campamento_id, solicitud[0].detalle]
       );
     }
@@ -95,7 +96,7 @@ export const responderSolicitud = async (req, res) => {
       usuario_id,
       campamento_id,
       accion: "RESPUESTA_SOLICITUD",
-      entidad_afectada: "SolicitudRecurso",
+      entidad_afectada: "solicitudrecurso",
       entidad_id: id,
       detalle: { estado, nota_respuesta },
       ip_origen: req.ip,
@@ -112,7 +113,7 @@ export const getExploraciones = async (req, res) => {
   try {
     const campamento_id = req.user.campamento;
 
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT 
         e.id,
         e.nombre_mision,
@@ -122,9 +123,9 @@ export const getExploraciones = async (req, res) => {
         e.estado,
         e.descripcion_zona,
         COUNT(pe.persona_id) AS total_personas
-       FROM Exploracion e
-       LEFT JOIN PersonaExploracion pe ON pe.exploracion_id = e.id
-       WHERE e.campamento_id = ?
+       FROM exploracion e
+       LEFT JOIN personaexploracion pe ON pe.exploracion_id = e.id
+       WHERE e.campamento_id = $1
        GROUP BY e.id
        ORDER BY e.fecha_salida DESC`,
       [campamento_id]
@@ -149,28 +150,30 @@ export const crearExploracion = async (req, res) => {
       personas,
     } = req.body;
 
-    const [result] = await pool.query(
-      `INSERT INTO Exploracion
+    const { rows } = await pool.query(
+      `INSERT INTO exploracion
         (campamento_id, nombre_mision, fecha_salida, dias_estimados, dias_extra_max, estado, descripcion_zona)
-       VALUES (?, ?, ?, ?, ?, 'PLANIFICADA', ?)`,
+       VALUES ($1, $2, $3, $4, $5, 'PLANIFICADA', $6)
+       RETURNING id`,
       [campamento_id, nombre_mision, fecha_salida, dias_estimados, dias_extra_max, descripcion_zona]
     );
 
-    const exploracion_id = result.insertId;
+    const exploracion_id = rows[0].id;
 
     if (personas && personas.length > 0) {
-      const valores = personas.map(p => [exploracion_id, p.persona_id, p.rol_en_mision]);
-      await pool.query(
-        `INSERT INTO PersonaExploracion (exploracion_id, persona_id, rol_en_mision) VALUES ?`,
-        [valores]
-      );
+      for (const p of personas) {
+        await pool.query(
+          `INSERT INTO personaexploracion (exploracion_id, persona_id, rol_en_mision) VALUES ($1, $2, $3)`,
+          [exploracion_id, p.persona_id, p.rol_en_mision]
+        );
+      }
     }
 
     await registrarLog({
       usuario_id: req.user.id,
       campamento_id,
       accion: "CREAR_EXPLORACION",
-      entidad_afectada: "Exploracion",
+      entidad_afectada: "exploracion",
       entidad_id: exploracion_id,
       detalle: { nombre_mision, fecha_salida, dias_estimados },
       ip_origen: req.ip,
@@ -189,8 +192,8 @@ export const completarExploracion = async (req, res) => {
     const campamento_id = req.user.campamento;
     const { recursos_encontrados } = req.body;
 
-    const [exploracion] = await pool.query(
-      `SELECT * FROM Exploracion WHERE id = ? AND campamento_id = ?`,
+    const { rows: exploracion } = await pool.query(
+      `SELECT * FROM exploracion WHERE id = $1 AND campamento_id = $2`,
       [id, campamento_id]
     );
 
@@ -199,13 +202,13 @@ export const completarExploracion = async (req, res) => {
     }
 
     await pool.query(
-      `UPDATE Exploracion SET estado = 'COMPLETADA' WHERE id = ?`,
+      `UPDATE exploracion SET estado = 'COMPLETADA' WHERE id = $1`,
       [id]
     );
 
     if (recursos_encontrados && recursos_encontrados.length > 0) {
-      const [bodega] = await pool.query(
-        `SELECT id FROM Bodega WHERE campamento_id = ?`,
+      const { rows: bodega } = await pool.query(
+        `SELECT id FROM bodega WHERE campamento_id = $1`,
         [campamento_id]
       );
 
@@ -213,15 +216,15 @@ export const completarExploracion = async (req, res) => {
 
       for (const recurso of recursos_encontrados) {
         await pool.query(
-          `UPDATE ItemBodega SET cantidad_actual = cantidad_actual + ?
-           WHERE bodega_id = ? AND tipo_recurso_id = ?`,
+          `UPDATE itembodega SET cantidad_actual = cantidad_actual + $1
+           WHERE bodega_id = $2 AND tipo_recurso_id = $3`,
           [recurso.cantidad, bodega_id, recurso.tipo_recurso_id]
         );
 
         await pool.query(
-          `INSERT INTO MovimientoBodega
+          `INSERT INTO movimientobodega
             (bodega_id, tipo_recurso_id, cantidad, tipo_movimiento, origen, registrado_por_usuario_id, nota)
-           VALUES (?, ?, ?, 'ENTRADA', 'EXPLORACION', ?, ?)`,
+           VALUES ($1, $2, $3, 'ENTRADA', 'EXPLORACION', $4, $5)`,
           [bodega_id, recurso.tipo_recurso_id, recurso.cantidad, req.user.id, `Recursos de exploración: ${exploracion[0].nombre_mision}`]
         );
       }
@@ -231,7 +234,7 @@ export const completarExploracion = async (req, res) => {
       usuario_id: req.user.id,
       campamento_id,
       accion: "COMPLETAR_EXPLORACION",
-      entidad_afectada: "Exploracion",
+      entidad_afectada: "exploracion",
       entidad_id: id,
       detalle: { recursos_encontrados },
       ip_origen: req.ip,

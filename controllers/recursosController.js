@@ -5,7 +5,7 @@ export const getBodega = async (req, res) => {
   try {
     const campamento_id = req.user.campamento;
 
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT 
         ib.id,
         tr.nombre AS recurso,
@@ -17,10 +17,10 @@ export const getBodega = async (req, res) => {
           WHEN ib.cantidad_actual <= ib.cantidad_minima_alerta 
           THEN 1 ELSE 0 
         END AS bajo_minimo
-       FROM ItemBodega ib
-       JOIN TipoRecurso tr ON tr.id = ib.tipo_recurso_id
-       JOIN Bodega b ON b.id = ib.bodega_id
-       WHERE b.campamento_id = ?`,
+       FROM itembodega ib
+       JOIN tiporecurso tr ON tr.id = ib.tipo_recurso_id
+       JOIN bodega b ON b.id = ib.bodega_id
+       WHERE b.campamento_id = $1`,
       [campamento_id]
     );
 
@@ -47,55 +47,55 @@ export const registrarMovimiento = async (req, res) => {
       return res.status(400).json({ error: "origen no válido" });
     }
 
-    const [bodega] = await pool.query(
-      `SELECT id FROM Bodega WHERE campamento_id = ?`,
+    const { rows: bodegaRows } = await pool.query(
+      `SELECT id FROM bodega WHERE campamento_id = $1`,
       [campamento_id]
     );
 
-    if (bodega.length === 0) {
+    if (bodegaRows.length === 0) {
       return res.status(404).json({ error: "Bodega no encontrada" });
     }
 
-    const bodega_id = bodega[0].id;
+    const bodega_id = bodegaRows[0].id;
 
     if (tipo_movimiento === "SALIDA") {
-      const [item] = await pool.query(
-        `SELECT cantidad_actual FROM ItemBodega 
-         WHERE bodega_id = ? AND tipo_recurso_id = ?`,
+      const { rows: itemRows } = await pool.query(
+        `SELECT cantidad_actual FROM itembodega 
+         WHERE bodega_id = $1 AND tipo_recurso_id = $2`,
         [bodega_id, tipo_recurso_id]
       );
 
-      if (item.length === 0 || item[0].cantidad_actual < cantidad) {
+      if (itemRows.length === 0 || itemRows[0].cantidad_actual < cantidad) {
         return res.status(400).json({ error: "Stock insuficiente" });
       }
     }
 
     await pool.query(
-      `INSERT INTO MovimientoBodega 
+      `INSERT INTO movimientobodega 
         (bodega_id, tipo_recurso_id, cantidad, tipo_movimiento, origen, registrado_por_usuario_id, nota)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [bodega_id, tipo_recurso_id, cantidad, tipo_movimiento, origen, usuario_id, nota]
     );
 
-    const operacion = tipo_movimiento === "ENTRADA" ? "+" : "-";
+    const operador = tipo_movimiento === "ENTRADA" ? "+" : "-";
     await pool.query(
-      `UPDATE ItemBodega SET cantidad_actual = cantidad_actual ${operacion} ?
-       WHERE bodega_id = ? AND tipo_recurso_id = ?`,
+      `UPDATE itembodega SET cantidad_actual = cantidad_actual ${operador} $1
+       WHERE bodega_id = $2 AND tipo_recurso_id = $3`,
       [cantidad, bodega_id, tipo_recurso_id]
     );
 
-    const [itemActualizado] = await pool.query(
+    const { rows: itemActualizado } = await pool.query(
       `SELECT cantidad_actual, cantidad_minima_alerta 
-       FROM ItemBodega 
-       WHERE bodega_id = ? AND tipo_recurso_id = ?`,
+       FROM itembodega 
+       WHERE bodega_id = $1 AND tipo_recurso_id = $2`,
       [bodega_id, tipo_recurso_id]
     );
 
     if (itemActualizado[0].cantidad_actual <= itemActualizado[0].cantidad_minima_alerta) {
       await pool.query(
-        `INSERT INTO AlertaRecurso 
+        `INSERT INTO alertarecurso 
           (bodega_id, tipo_recurso_id, cantidad_al_momento, cantidad_minima, estado)
-         VALUES (?, ?, ?, ?, 'ACTIVA')`,
+         VALUES ($1, $2, $3, $4, 'ACTIVA')`,
         [bodega_id, tipo_recurso_id, itemActualizado[0].cantidad_actual, itemActualizado[0].cantidad_minima_alerta]
       );
     }
@@ -104,7 +104,7 @@ export const registrarMovimiento = async (req, res) => {
       usuario_id,
       campamento_id,
       accion: tipo_movimiento === "ENTRADA" ? "ENTRADA_RECURSO" : "SALIDA_RECURSO",
-      entidad_afectada: "ItemBodega",
+      entidad_afectada: "itembodega",
       entidad_id: bodega_id,
       detalle: { tipo_recurso_id, cantidad, origen, nota },
       ip_origen: req.ip,
@@ -121,7 +121,7 @@ export const getAlertas = async (req, res) => {
   try {
     const campamento_id = req.user.campamento;
 
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT 
         ar.id,
         tr.nombre AS recurso,
@@ -131,12 +131,12 @@ export const getAlertas = async (req, res) => {
         ar.cantidad_minima,
         ar.estado,
         ar.fecha_generacion
-       FROM AlertaRecurso ar
-       JOIN ItemBodega ib ON ib.bodega_id = ar.bodega_id
-       JOIN TipoRecurso tr ON tr.id = ar.tipo_recurso_id
-       JOIN Bodega b ON b.id = ar.bodega_id
-       WHERE b.campamento_id = ? AND ar.estado = 'ACTIVA'
-       GROUP BY ar.id`,
+       FROM alertarecurso ar
+       JOIN itembodega ib ON ib.bodega_id = ar.bodega_id
+       JOIN tiporecurso tr ON tr.id = ar.tipo_recurso_id
+       JOIN bodega b ON b.id = ar.bodega_id
+       WHERE b.campamento_id = $1 AND ar.estado = 'ACTIVA'
+       GROUP BY ar.id, tr.nombre, tr.unidad, tr.es_vital, ar.cantidad_al_momento, ar.cantidad_minima, ar.estado, ar.fecha_generacion`,
       [campamento_id]
     );
 
@@ -151,7 +151,7 @@ export const getMovimientos = async (req, res) => {
   try {
     const campamento_id = req.user.campamento;
 
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT 
         mb.id,
         tr.nombre AS recurso,
@@ -161,11 +161,11 @@ export const getMovimientos = async (req, res) => {
         mb.nota,
         mb.fecha,
         u.username AS registrado_por
-       FROM MovimientoBodega mb
-       JOIN TipoRecurso tr ON tr.id = mb.tipo_recurso_id
-       JOIN Bodega b ON b.id = mb.bodega_id
-       LEFT JOIN Usuario u ON u.id = mb.registrado_por_usuario_id
-       WHERE b.campamento_id = ?
+       FROM movimientobodega mb
+       JOIN tiporecurso tr ON tr.id = mb.tipo_recurso_id
+       JOIN bodega b ON b.id = mb.bodega_id
+       LEFT JOIN usuario u ON u.id = mb.registrado_por_usuario_id
+       WHERE b.campamento_id = $1
        ORDER BY mb.fecha DESC`,
       [campamento_id]
     );

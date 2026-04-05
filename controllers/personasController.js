@@ -5,7 +5,7 @@ export const getPersonas = async (req, res) => {
   try {
     const campamento_id = req.user.campamento;
 
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT 
         p.id,
         p.nombre,
@@ -16,10 +16,10 @@ export const getPersonas = async (req, res) => {
         c.nombre AS cargo,
         c.categoria,
         ac.es_temporal
-       FROM Persona p
-       LEFT JOIN AsignacionCargo ac ON ac.persona_id = p.id AND ac.campamento_id = ?
-       LEFT JOIN Cargo c ON c.id = ac.cargo_id
-       WHERE p.campamento_id = ?`,
+       FROM persona p
+       LEFT JOIN asignacioncargo ac ON ac.persona_id = p.id AND ac.campamento_id = $1
+       LEFT JOIN cargo c ON c.id = ac.cargo_id
+       WHERE p.campamento_id = $2`,
       [campamento_id, campamento_id]
     );
 
@@ -42,10 +42,11 @@ export const addPersona = async (req, res) => {
       estado_salud,
     } = req.body;
 
-    const [result] = await pool.query(
-      `INSERT INTO Persona 
+    const { rows } = await pool.query(
+      `INSERT INTO persona 
         (nombre, apellidos, fecha_nacimiento, habilidades_combate, nivel_confianza, estado_salud, esta_en_campamento, fecha_ingreso, campamento_id)
-       VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6, TRUE, NOW(), $7)
+       RETURNING id`,
       [nombre, apellidos, fecha_nacimiento, habilidades_combate, nivel_confianza, estado_salud, campamento_id]
     );
 
@@ -53,13 +54,13 @@ export const addPersona = async (req, res) => {
       usuario_id: req.user.id,
       campamento_id: campamento_id,
       accion: "INGRESO_PERSONA",
-      entidad_afectada: "Persona",
-      entidad_id: result.insertId,
+      entidad_afectada: "persona",
+      entidad_id: rows[0].id,
       detalle: { nombre, apellidos, estado_salud },
       ip_origen: req.ip,
     });
 
-    res.status(201).json({ mensaje: "Persona agregada", id: result.insertId });
+    res.status(201).json({ mensaje: "Persona agregada", id: rows[0].id });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error servidor" });
@@ -78,8 +79,8 @@ export const updateEstadoPersona = async (req, res) => {
     }
 
     await pool.query(
-      `UPDATE Persona SET estado_salud = ? 
-       WHERE id = ? AND campamento_id = ?`,
+      `UPDATE persona SET estado_salud = $1 
+       WHERE id = $2 AND campamento_id = $3`,
       [estado_salud, id, campamento_id]
     );
 
@@ -87,7 +88,7 @@ export const updateEstadoPersona = async (req, res) => {
       usuario_id: req.user.id,
       campamento_id: campamento_id,
       accion: "CAMBIO_ESTADO_PERSONA",
-      entidad_afectada: "Persona",
+      entidad_afectada: "persona",
       entidad_id: id,
       detalle: { estado_salud },
       ip_origen: req.ip,
@@ -107,9 +108,9 @@ export const moverPersonaRol = async (req, res) => {
     const campamento_id = req.user.campamento;
 
     await pool.query(
-      `UPDATE AsignacionCargo 
-       SET cargo_id = ?, es_temporal = 1, motivo = ?
-       WHERE persona_id = ? AND campamento_id = ?`,
+      `UPDATE asignacioncargo 
+       SET cargo_id = $1, es_temporal = TRUE, motivo = $2
+       WHERE persona_id = $3 AND campamento_id = $4`,
       [cargo_id, motivo, id, campamento_id]
     );
 
@@ -117,7 +118,7 @@ export const moverPersonaRol = async (req, res) => {
       usuario_id: req.user.id,
       campamento_id: campamento_id,
       accion: "CAMBIO_ROL_PERSONA",
-      entidad_afectada: "AsignacionCargo",
+      entidad_afectada: "asignacioncargo",
       entidad_id: id,
       detalle: { cargo_id, motivo, es_temporal: true },
       ip_origen: req.ip,
