@@ -1,13 +1,13 @@
 import pool from "../db/connection.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { registrarLog } from "../middleware/logger.js"; 
+import { registrarLog } from "../middleware/logger.js";
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const [rows] = await pool.query(
-      "SELECT * FROM Usuario WHERE email = ?",
+    const { rows } = await pool.query(
+      "SELECT * FROM usuario WHERE email = $1",
       [email]
     );
 
@@ -28,12 +28,11 @@ export const login = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES }
     );
 
-  
     await registrarLog({
       usuario_id: user.id,
       campamento_id: user.campamento_id,
       accion: "LOGIN",
-      entidad_afectada: "Usuario",
+      entidad_afectada: "usuario",
       entidad_id: user.id,
       detalle: { resultado: "exitoso" },
       ip_origen: req.ip,
