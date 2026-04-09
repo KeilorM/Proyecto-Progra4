@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { getPersonas, updateEstadoPersona, addPersona} from "../services/api"
 import PageHeader from "../components/PageHeader"
 import { sharedStyles, theme } from "../styles/theme"
-
+import { useInactivityTimer } from "../hooks/useInactivityTimer"
 // ─── TIPOS ───────────────────────────────────────────────────────────────────
 
 interface Persona {
@@ -13,9 +13,9 @@ interface Persona {
   habilidades_combate: number
   nivel_confianza: number
   estado_salud: "SANO" | "HERIDO" | "ENFERMO" | "MUERTO"
-  esta_en_campamento: number
+  esta_en_campamento: boolean
   cargo: string
-  es_temporal: number
+  es_temporal: boolean
 }
 
 const ESTADOS = ["SANO", "HERIDO", "ENFERMO", "MUERTO"] as const
@@ -28,10 +28,10 @@ const ESTADO_COLOR: Record<string, string> = {
 }
 
 const ESTADO_LABEL: Record<string, string> = {
-  SANO:    "Operativo",
+  SANO:    "Sano",
   HERIDO:  "Herido",
   ENFERMO: "Enfermo",
-  MUERTO:  "Caído",
+  MUERTO:  "Muerto",
 }
 
 // ─── MODAL AGREGAR ───────────────────────────────────────────────────────────
@@ -120,6 +120,7 @@ function ModalAgregarPersona({ onClose, onSuccess }: { onClose: () => void; onSu
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
+  useInactivityTimer()
   const [personas, setPersonas] = useState<Persona[]>([])
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState("")
