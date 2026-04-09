@@ -2,23 +2,23 @@ import { useEffect, useState } from "react"
 import { getBodega, getAlertas } from "../services/api"
 import PageHeader from "../components/PageHeader"
 import { sharedStyles, theme } from "../styles/theme"
-
+import { useInactivityTimer } from "../hooks/useInactivityTimer"
 // ─── TIPOS ───────────────────────────────────────────────────────────────────
 
 interface ItemBodega {
   id: number
   recurso: string
   unidad: string
-  es_vital: number
+  es_vital: boolean
   cantidad_actual: number
   cantidad_minima_alerta: number
-  bajo_minimo: number
+  bajo_minimo: boolean
 }
 
 interface Alerta {
   id: number
   recurso: string
-  es_vital: number
+  es_vital: boolean
   cantidad_al_momento: number
   cantidad_minima: number
   fecha_generacion: string
@@ -27,6 +27,7 @@ interface Alerta {
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
 
 export default function TrabajadorDashboard() {
+    useInactivityTimer()
   const [items, setItems]     = useState<ItemBodega[]>([])
   const [alertas, setAlertas] = useState<Alerta[]>([])
   const [loading, setLoading] = useState(true)

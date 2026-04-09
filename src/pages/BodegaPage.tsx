@@ -2,24 +2,24 @@ import { useEffect, useState } from "react"
 import { getBodega, getAlertas, getMovimientos, registrarMovimiento } from "../services/api"
 import PageHeader from "../components/PageHeader"
 import { sharedStyles, theme } from "../styles/theme"
-
+import { useInactivityTimer } from "../hooks/useInactivityTimer"
 // ─── TIPOS ───────────────────────────────────────────────────────────────────
 
 interface ItemBodega {
   id: number
   recurso: string
   unidad: string
-  es_vital: number
+  es_vital: boolean
   cantidad_actual: number
   cantidad_minima_alerta: number
-  bajo_minimo: number
+  bajo_minimo: boolean
 }
 
 interface Alerta {
   id: number
   recurso: string
   unidad: string
-  es_vital: number
+  es_vital: boolean
   cantidad_al_momento: number
   cantidad_minima: number
   estado: string
@@ -149,6 +149,7 @@ function ModalMovimiento({
 type Tab = "inventario" | "alertas" | "historial"
 
 export default function BodegaPage() {
+  useInactivityTimer()
   const [items, setItems]           = useState<ItemBodega[]>([])
   const [alertas, setAlertas]       = useState<Alerta[]>([])
   const [movimientos, setMovimientos] = useState<Movimiento[]>([])

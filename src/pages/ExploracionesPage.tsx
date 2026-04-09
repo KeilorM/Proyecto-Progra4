@@ -5,7 +5,7 @@ import {
 } from "../services/api"
 import PageHeader from "../components/PageHeader"
 import { sharedStyles, theme } from "../styles/theme"
-
+import { useInactivityTimer } from "../hooks/useInactivityTimer"
 // ─── TIPOS ───────────────────────────────────────────────────────────────────
 
 interface Exploracion {
@@ -373,6 +373,7 @@ type Tab = "exploraciones" | "solicitudes"
 type Modal = "crear" | "completar" | "solicitud" | null
 
 export default function ExploracionesPage() {
+  useInactivityTimer()
   const [exploraciones, setExploraciones] = useState<Exploracion[]>([])
   const [campamentos, setCampamentos]     = useState<Campamento[]>([])
   const [personas, setPersonas]           = useState<Persona[]>([])
@@ -530,7 +531,7 @@ export default function ExploracionesPage() {
                         </span>
                       </td>
                       <td style={sharedStyles.td}>
-                        {(e.estado === "PLANIFICADA" || e.estado === "EN_CURSO") && (
+                        {(e.estado === "EN_CURSO") && (
                           <button onClick={() => { setExploracionActiva(e); setModal("completar") }}
                             style={{ ...sharedStyles.actionBtn, padding: "4px 12px", fontSize: 11 }}>
                             COMPLETAR

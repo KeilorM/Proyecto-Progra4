@@ -12,6 +12,7 @@ export default function PageHeader({ titulo, subtitulo }: Props) {
   const handleLogout = () => {
     localStorage.removeItem("token")
     localStorage.removeItem("rol")
+    localStorage.removeItem("campamento")
     navigate("/")
   }
 
