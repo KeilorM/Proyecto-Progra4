@@ -130,3 +130,66 @@ export const moverPersonaRol = async (req, res) => {
     res.status(500).json({ error: "Error servidor" });
   }
 };
+
+export const getPersonaById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const campamento_id = req.user.campamento;
+
+    const { rows } = await pool.query(
+      `SELECT
+        p.id,
+        p.nombre,
+        p.apellidos,
+        p.fecha_nacimiento,
+        p.habilidades_combate,
+        p.nivel_confianza,
+        p.estado_salud,
+        p.esta_en_campamento,
+        p.fecha_ingreso,
+        c.nombre AS cargo,
+        c.categoria
+       FROM persona p
+       LEFT JOIN asignacioncargo ac ON ac.persona_id = p.id AND ac.fecha_fin IS NULL
+       LEFT JOIN cargo c ON c.id = ac.cargo_id
+       WHERE p.id = $1 AND p.campamento_id = $2`,
+      [id, campamento_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Persona no encontrada" });
+    }
+
+    res.json(rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error servidor" });
+  }
+};
+
+export const getCargosPersona = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const campamento_id = req.user.campamento;
+
+    const { rows } = await pool.query(
+      `SELECT
+        ac.id,
+        c.nombre AS cargo,
+        c.categoria,
+        c.descripcion,
+        ac.fecha_inicio,
+        ac.es_temporal,
+        ac.motivo
+       FROM asignacioncargo ac
+       JOIN cargo c ON c.id = ac.cargo_id
+       WHERE ac.persona_id = $1 AND ac.campamento_id = $2 AND ac.fecha_fin IS NULL`,
+      [id, campamento_id]
+    );
+
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error servidor" });
+  }
+};

@@ -176,3 +176,123 @@ export const getMovimientos = async (req, res) => {
     res.status(500).json({ error: "Error servidor" });
   }
 };
+
+export const getBodegaResumen = async (req, res) => {
+  try {
+    const campamento_id = req.user.campamento;
+
+    const { rows } = await pool.query(
+      `SELECT
+        tr.nombre AS recurso,
+        tr.unidad,
+        tr.es_vital,
+        ib.cantidad_actual,
+        ib.cantidad_minima_alerta,
+        CASE
+          WHEN ib.cantidad_actual <= ib.cantidad_minima_alerta
+          THEN true ELSE false
+        END AS bajo_minimo
+       FROM itembodega ib
+       JOIN tiporecurso tr ON tr.id = ib.tipo_recurso_id
+       JOIN bodega b ON b.id = ib.bodega_id
+       WHERE b.campamento_id = $1
+       ORDER BY tr.es_vital DESC, tr.nombre ASC`,
+      [campamento_id]
+    );
+
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error servidor" });
+  }
+};
+
+export const procesarConsumoDiario = async (req, res) => {
+  try {
+    const campamento_id = req.user.campamento;
+
+    const { rows: bodega } = await pool.query(
+      `SELECT id FROM bodega WHERE campamento_id = $1`,
+      [campamento_id]
+    );
+
+    if (bodega.length === 0) {
+      return res.status(404).json({ error: "Bodega no encontrada" });
+    }
+
+    const bodega_id = bodega[0].id;
+
+    const { rows: produccion } = await pool.query(
+      `SELECT
+        COALESCE(SUM(c.produccion_comida_diaria), 0) AS comida,
+        COALESCE(SUM(c.produccion_agua_diaria), 0) AS agua
+       FROM asignacioncargo ac
+       JOIN cargo c ON c.id = ac.cargo_id
+       JOIN persona p ON p.id = ac.persona_id
+       WHERE ac.campamento_id = $1
+         AND ac.fecha_fin IS NULL
+         AND p.estado_salud = 'SANO'
+         AND p.esta_en_campamento = TRUE`,
+      [campamento_id]
+    );
+
+    const { rows: countPersonas } = await pool.query(
+      `SELECT COUNT(*) AS total
+       FROM persona
+       WHERE campamento_id = $1 AND esta_en_campamento = TRUE AND estado_salud != 'MUERTO'`,
+      [campamento_id]
+    );
+
+    const totalPersonas = parseInt(countPersonas[0].total);
+    const comidaProducida = parseFloat(produccion[0].comida);
+    const aguaProducida = parseFloat(produccion[0].agua);
+
+    const { rows: tipoComida } = await pool.query(
+      `SELECT ib.tipo_recurso_id FROM itembodega ib
+       JOIN tiporecurso tr ON tr.id = ib.tipo_recurso_id
+       WHERE ib.bodega_id = $1 AND tr.nombre ILIKE '%comida%' LIMIT 1`,
+      [bodega_id]
+    );
+
+    const { rows: tipoAgua } = await pool.query(
+      `SELECT ib.tipo_recurso_id FROM itembodega ib
+       JOIN tiporecurso tr ON tr.id = ib.tipo_recurso_id
+       WHERE ib.bodega_id = $1 AND tr.nombre ILIKE '%agua%' LIMIT 1`,
+      [bodega_id]
+    );
+
+   // solucionar antes en la bd
+
+// if (tipoComida.length > 0 && comidaProducida > 0) {
+//   await pool.query(
+//     `UPDATE itembodega SET cantidad_actual = cantidad_actual + $1
+//      WHERE bodega_id = $2 AND tipo_recurso_id = $3`,
+//     [comidaProducida, bodega_id, tipoComida[0].tipo_recurso_id]
+//   );
+// }
+
+// if (tipoAgua.length > 0 && aguaProducida > 0) {
+//   await pool.query(
+//     `UPDATE itembodega SET cantidad_actual = cantidad_actual + $1
+//      WHERE bodega_id = $2 AND tipo_recurso_id = $3`,
+//     [aguaProducida, bodega_id, tipoAgua[0].tipo_recurso_id]
+//   );
+// }
+
+// if (tipoComida.length > 0 && totalPersonas > 0) {
+//   await pool.query(
+//     `UPDATE itembodega SET cantidad_actual = GREATEST(0, cantidad_actual - $1)
+//      WHERE bodega_id = $2 AND tipo_recurso_id = $3`,
+//     [totalPersonas, bodega_id, tipoComida[0].tipo_recurso_id]
+//   );
+// }
+    res.json({
+      mensaje: "Consumo diario procesado correctamente",
+      produccion: { comida: comidaProducida, agua: aguaProducida },
+      consumo: { personas: totalPersonas },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error servidor" });
+  }
+};
