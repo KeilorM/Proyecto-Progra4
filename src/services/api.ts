@@ -189,4 +189,49 @@ export async function completarExploracion(
   const data = await res.json()
   if (!res.ok) throw new Error(data.error || "Error al completar exploración")
   return data
+
+}
+
+// ─── CATÁLOGOS ────────────────────────────────────────────────────────────────
+
+export async function getTiposRecurso() {
+  const res = await fetch(`${BASE_URL}/api/v1/catalogos/tipos-recurso`, { headers: authHeaders() })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || "Error al obtener tipos de recurso")
+  return data
+}
+
+export async function getCargos() {
+  const res = await fetch(`${BASE_URL}/api/v1/catalogos/cargos`, { headers: authHeaders() })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || "Error al obtener cargos")
+  return data
+}
+
+export async function getDashboard() {
+  const res = await fetch(`${BASE_URL}/api/v1/catalogos/dashboard`, { headers: authHeaders() })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || "Error al obtener dashboard")
+  return data
+}
+
+export async function getSolicitudesRecibidas() {
+  const res = await fetch(`${BASE_URL}/api/v1/catalogos/solicitudes/recibidas`, { headers: authHeaders() })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || "Error al obtener solicitudes recibidas")
+  return data
+}
+
+export async function getSolicitudesEnviadas() {
+  const res = await fetch(`${BASE_URL}/api/v1/catalogos/solicitudes/enviadas`, { headers: authHeaders() })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || "Error al obtener solicitudes enviadas")
+  return data
+}
+
+export async function getTraslados() {
+  const res = await fetch(`${BASE_URL}/api/v1/catalogos/traslados`, { headers: authHeaders() })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || "Error al obtener traslados")
+  return data
 }
