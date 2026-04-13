@@ -5,20 +5,17 @@ import {
   registrarMovimiento,
   getAlertas,
   getMovimientos,
+  getBodegaResumen,
+  procesarConsumoDiario,
 } from "../controllers/recursosController.js";
 
 const router = express.Router();
 
-// GESTOR_RECURSOS y ADMIN pueden ver la bodega
 router.get("/", verifyToken, verifyRol("ADMIN", "GESTOR_RECURSOS"), getBodega);
-
-// solo GESTOR_RECURSOS registra entradas y salidas
+router.get("/resumen", verifyToken, verifyRol("ADMIN", "GESTOR_RECURSOS"), getBodegaResumen);
 router.post("/movimiento", verifyToken, verifyRol("GESTOR_RECURSOS"), registrarMovimiento);
-
-// alertas de recursos bajo mínimo
 router.get("/alertas", verifyToken, verifyRol("ADMIN", "GESTOR_RECURSOS"), getAlertas);
-
-// historial de movimientos de la bodega
 router.get("/movimientos", verifyToken, verifyRol("ADMIN", "GESTOR_RECURSOS"), getMovimientos);
+router.post("/consumo-diario", verifyToken, verifyRol("ADMIN"), procesarConsumoDiario);
 
-export default router;
+export default router;    

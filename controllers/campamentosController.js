@@ -7,7 +7,6 @@ export const getCampamentos = async (req, res) => {
       `SELECT id, nombre, ubicacion, estado, capacidad_maxima, descripcion
        FROM campamento WHERE estado = 'ACTIVO'`
     );
-
     res.json(rows);
   } catch (error) {
     console.error(error);
@@ -141,14 +140,7 @@ export const getExploraciones = async (req, res) => {
 export const crearExploracion = async (req, res) => {
   try {
     const campamento_id = req.user.campamento;
-    const {
-      nombre_mision,
-      fecha_salida,
-      dias_estimados,
-      dias_extra_max,
-      descripcion_zona,
-      personas,
-    } = req.body;
+    const { nombre_mision, fecha_salida, dias_estimados, dias_extra_max, descripcion_zona, personas } = req.body;
 
     const { rows } = await pool.query(
       `INSERT INTO exploracion
@@ -241,6 +233,82 @@ export const completarExploracion = async (req, res) => {
     });
 
     res.json({ mensaje: "Exploración completada y recursos registrados" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error servidor" });
+  }
+};
+
+export const aprobarSalidaTraslado = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const usuario_id = req.user.id;
+    const campamento_id = req.user.campamento;
+
+    const { rows: traslado } = await pool.query(
+      `SELECT * FROM traslado WHERE id = $1 AND campamento_origen_id = $2 AND estado = 'PENDIENTE_SALIDA'`,
+      [id, campamento_id]
+    );
+
+    if (traslado.length === 0) {
+      return res.status(404).json({ error: "Traslado no encontrado o ya fue procesado" });
+    }
+
+    await pool.query(
+      `UPDATE traslado SET estado = 'EN_TRANSITO', aprobado_salida_por_id = $1 WHERE id = $2`,
+      [usuario_id, id]
+    );
+
+    await registrarLog({
+      usuario_id,
+      campamento_id,
+      accion: "APROBAR_SALIDA_TRASLADO",
+      entidad_afectada: "traslado",
+      entidad_id: id,
+      detalle: { estado: "EN_TRANSITO" },
+      ip_origen: req.ip,
+    });
+
+    res.json({ mensaje: "Salida del traslado aprobada" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error servidor" });
+  }
+};
+
+export const aprobarLlegadaTraslado = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const usuario_id = req.user.id;
+    const campamento_id = req.user.campamento;
+
+    const { rows: traslado } = await pool.query(
+      `SELECT * FROM traslado WHERE id = $1 AND campamento_destino_id = $2 AND estado = 'EN_TRANSITO'`,
+      [id, campamento_id]
+    );
+
+    if (traslado.length === 0) {
+      return res.status(404).json({ error: "Traslado no encontrado o ya fue procesado" });
+    }
+
+    await pool.query(
+      `UPDATE traslado 
+       SET estado = 'COMPLETADO', aprobado_llegada_por_id = $1, fecha_llegada_real = NOW()
+       WHERE id = $2`,
+      [usuario_id, id]
+    );
+
+    await registrarLog({
+      usuario_id,
+      campamento_id,
+      accion: "APROBAR_LLEGADA_TRASLADO",
+      entidad_afectada: "traslado",
+      entidad_id: id,
+      detalle: { estado: "COMPLETADO" },
+      ip_origen: req.ip,
+    });
+
+    res.json({ mensaje: "Llegada del traslado aprobada y completada" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error servidor" });
