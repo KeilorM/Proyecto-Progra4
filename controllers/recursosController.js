@@ -261,31 +261,29 @@ export const procesarConsumoDiario = async (req, res) => {
       [bodega_id]
     );
 
-   // solucionar antes en la bd
+    if (tipoComida.length > 0 && comidaProducida > 0) {
+      await pool.query(
+        `UPDATE itembodega SET cantidad_actual = cantidad_actual + $1
+        WHERE bodega_id = $2 AND tipo_recurso_id = $3`,
+        [comidaProducida, bodega_id, tipoComida[0].tipo_recurso_id]
+      );
+    }
 
-// if (tipoComida.length > 0 && comidaProducida > 0) {
-//   await pool.query(
-//     `UPDATE itembodega SET cantidad_actual = cantidad_actual + $1
-//      WHERE bodega_id = $2 AND tipo_recurso_id = $3`,
-//     [comidaProducida, bodega_id, tipoComida[0].tipo_recurso_id]
-//   );
-// }
+    if (tipoAgua.length > 0 && aguaProducida > 0) {
+      await pool.query(
+        `UPDATE itembodega SET cantidad_actual = cantidad_actual + $1
+        WHERE bodega_id = $2 AND tipo_recurso_id = $3`,
+        [aguaProducida, bodega_id, tipoAgua[0].tipo_recurso_id]
+      );
+    }
 
-// if (tipoAgua.length > 0 && aguaProducida > 0) {
-//   await pool.query(
-//     `UPDATE itembodega SET cantidad_actual = cantidad_actual + $1
-//      WHERE bodega_id = $2 AND tipo_recurso_id = $3`,
-//     [aguaProducida, bodega_id, tipoAgua[0].tipo_recurso_id]
-//   );
-// }
-
-// if (tipoComida.length > 0 && totalPersonas > 0) {
-//   await pool.query(
-//     `UPDATE itembodega SET cantidad_actual = GREATEST(0, cantidad_actual - $1)
-//      WHERE bodega_id = $2 AND tipo_recurso_id = $3`,
-//     [totalPersonas, bodega_id, tipoComida[0].tipo_recurso_id]
-//   );
-// }
+    if (tipoComida.length > 0 && totalPersonas > 0) {
+      await pool.query(
+        `UPDATE itembodega SET cantidad_actual = GREATEST(0, cantidad_actual - $1)
+        WHERE bodega_id = $2 AND tipo_recurso_id = $3`,
+        [totalPersonas, bodega_id, tipoComida[0].tipo_recurso_id]
+      );
+    }
     res.json({
       mensaje: "Consumo diario procesado correctamente",
       produccion: { comida: comidaProducida, agua: aguaProducida },
