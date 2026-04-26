@@ -179,7 +179,7 @@ export default function BodegaPage() {
 
   useEffect(() => { cargar() }, [])
 
-  const totalVital    = items.filter(i => i.es_vital).reduce((s, i) => s + i.cantidad_actual, 0)
+  const totalVital = items.filter(i => i.es_vital).reduce((s, i) => s + Number(i.cantidad_actual), 0)
   const totalBajoMin  = items.filter(i => i.bajo_minimo).length
 
   return (
