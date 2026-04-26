@@ -10,6 +10,8 @@ export const getPersonas = async (req, res) => {
         p.id,
         p.nombre,
         p.apellidos,
+        p.habilidades_combate,
+        p.nivel_confianza,
         p.estado_salud,
         p.esta_en_campamento,
         p.fecha_ingreso,

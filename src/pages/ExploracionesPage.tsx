@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import {
   getExploraciones, crearExploracion, completarExploracion,
-  getCampamentos, crearSolicitud, getPersonas, getBodega
+  getCampamentos, crearSolicitud, getPersonas, getBodega, getSolicitudesEnviadas
 } from "../services/api"
 import PageHeader from "../components/PageHeader"
 import { sharedStyles, theme } from "../styles/theme"
@@ -36,6 +36,16 @@ interface ItemBodega {
   id: number
   recurso: string
   unidad: string
+}
+
+interface Solicitud {
+  id: number
+  tipo_solicitud: "RECURSOS" | "PERSONAS"
+  detalle: { descripcion?: string }
+  estado: "PENDIENTE" | "APROBADA" | "RECHAZADA" | "COMPLETADA"
+  fecha_solicitud: string
+  campamento_destino: string
+  nota_respuesta?: string
 }
 
 const ESTADO_COLOR: Record<string, string> = {
@@ -383,23 +393,25 @@ export default function ExploracionesPage() {
   const [tab, setTab]                     = useState<Tab>("exploraciones")
   const [modal, setModal]                 = useState<Modal>(null)
   const [exploracionActiva, setExploracionActiva] = useState<Exploracion | null>(null)
-
+  const [solicitudes, setSolicitudes] = useState<Solicitud[]>([])
   const campamentoActual = Number(localStorage.getItem("campamento") ?? 0)
 
   const cargar = async () => {
     try {
       setLoading(true)
       setError("")
-      const [exps, camps, pers, bodega] = await Promise.all([
+      const [exps, camps, pers, bodega, sols ] = await Promise.all([
         getExploraciones(),
         getCampamentos(),
         getPersonas(),
         getBodega(),
+        getSolicitudesEnviadas(),
       ])
       setExploraciones(exps)
       setCampamentos(camps)
       setPersonas(pers)
       setItemsBodega(bodega)
+      setSolicitudes(sols)
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message)
     } finally {
@@ -544,10 +556,46 @@ export default function ExploracionesPage() {
               </table>
             )
           ) : (
-            <div style={{ padding: 32, textAlign: "center", color: "#334155",
-              fontFamily: theme.fonts.mono, fontSize: 14 }}>
-              Módulo de solicitudes — próximamente
-            </div>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  {["DESTINO", "TIPO", "DETALLE", "ESTADO", "FECHA"].map(h => (
+                    <th key={h} style={sharedStyles.th}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {solicitudes.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ ...sharedStyles.td, textAlign: "center",
+                      color: "#334155", fontFamily: theme.fonts.mono, fontSize: 14, padding: 32 }}>
+                      No hay solicitudes enviadas
+                    </td>
+                  </tr>
+                ) : (
+                  solicitudes.map((s) => (
+                    <tr key={s.id}>
+                      <td style={sharedStyles.td}>{s.campamento_destino}</td>
+                      <td style={sharedStyles.td}>{s.tipo_solicitud}</td>
+                      <td style={sharedStyles.td}>{s.detalle?.descripcion ?? "—"}</td>
+                      <td style={sharedStyles.td}>
+                        <span style={{ fontFamily: theme.fonts.mono, fontSize: 11,
+                          color: s.estado === "PENDIENTE" ? "#facc15" :
+                                s.estado === "APROBADA" ? "#4ade80" : "#f87171",
+                          border: `1px solid ${s.estado === "PENDIENTE" ? "#facc15" :
+                                s.estado === "APROBADA" ? "#4ade80" : "#f87171"}`,
+                          padding: "2px 8px" }}>
+                          {s.estado}
+                        </span>
+                      </td>
+                      <td style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}>
+                        {new Date(s.fecha_solicitud).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           )}
         </div>
 
