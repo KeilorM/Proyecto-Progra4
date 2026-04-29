@@ -6,6 +6,7 @@ import personasRoutes from "./routes/personasRoutes.js";
 import recursosRoutes from "./routes/recursosRoutes.js";
 import campamentosRoutes from "./routes/campamentosRoutes.js";
 import catalogosRoutes from "./routes/catalogosRoutes.js";
+import iaRoutes from "./routes/iaRoutes.js";
 
 
 const app = express();
@@ -17,6 +18,7 @@ app.use("/api/v1/personas", personasRoutes);
 app.use("/api/v1/recursos", recursosRoutes);
 app.use("/api/v1/campamentos", campamentosRoutes);
 app.use("/api/v1/catalogos", catalogosRoutes);
+app.use("/api/v1/ia", iaRoutes);
 
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
