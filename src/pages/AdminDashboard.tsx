@@ -3,6 +3,7 @@ import PageHeader from "../components/PageHeader"
 import { sharedStyles, theme } from "../styles/theme"
 import { useInactivityTimer } from "../hooks/useInactivityTimer"
 import { getPersonas, updateEstadoPersona, addPersona, getSolicitudesRecibidas, responderSolicitud } from "../services/api"
+import ModalAgregarPersonaIA from "../components/AIAnalisisIngreso"
 
 // ─── TIPOS ───────────────────────────────────────────────────────────────────
 interface Solicitud {
@@ -406,7 +407,7 @@ export default function AdminDashboard() {
       </main>
 
       {modalOpen && (
-        <ModalAgregarPersona onClose={() => setModal(false)} onSuccess={cargar} />
+        <ModalAgregarPersonaIA onClose={() => setModal(false)} onSuccess={cargar} />
       )}
     </div>
   )
