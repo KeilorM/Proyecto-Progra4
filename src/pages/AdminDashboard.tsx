@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import PageHeader from "../components/PageHeader"
 import { sharedStyles, theme } from "../styles/theme"
 import { useInactivityTimer } from "../hooks/useInactivityTimer"
-import { getPersonas, updateEstadoPersona, addPersona, getSolicitudesRecibidas, responderSolicitud } from "../services/api"
+import { getPersonas, updateEstadoPersona, getSolicitudesRecibidas, responderSolicitud } from "../services/api"
 import ModalAgregarPersonaIA from "../components/AIAnalisisIngreso"
 
 // ─── TIPOS ───────────────────────────────────────────────────────────────────
@@ -45,89 +45,6 @@ const ESTADO_LABEL: Record<string, string> = {
   HERIDO:  "Herido",
   ENFERMO: "Enfermo",
   MUERTO:  "Muerto",
-}
-
-// ─── MODAL AGREGAR ───────────────────────────────────────────────────────────
-
-function ModalAgregarPersona({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [saving, setSaving] = useState(false)
-  const [error, setError]   = useState("")
-  const [form, setForm]     = useState({
-    nombre: "", apellidos: "", fecha_nacimiento: "",
-    habilidades_combate: 5, nivel_confianza: 5, estado_salud: "SANO",
-  })
-
-  const set = (field: string, value: string | number) =>
-    setForm(f => ({ ...f, [field]: value }))
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      setSaving(true)
-      await addPersona(form)
-      onSuccess()
-      onClose()
-    } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div style={sharedStyles.modalOverlay} onClick={onClose}>
-      <div style={sharedStyles.modal} onClick={e => e.stopPropagation()}>
-        <div style={sharedStyles.modalHeader}>
-          <span style={sharedStyles.modalTitle}>NUEVO SUPERVIVIENTE</span>
-          <button style={sharedStyles.modalClose} onClick={onClose}>✕</button>
-        </div>
-        {error && (
-          <div style={{ ...sharedStyles.errorBanner, margin: "16px 24px 0" }}>⚠ {error}</div>
-        )}
-        <form onSubmit={handleSubmit} style={{ padding: 24, display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <label style={sharedStyles.label}>NOMBRE</label>
-              <input style={{ ...sharedStyles.input, marginTop: 4 }} placeholder="Nombre"
-                value={form.nombre} onChange={e => set("nombre", e.target.value)} required />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={sharedStyles.label}>APELLIDOS</label>
-              <input style={{ ...sharedStyles.input, marginTop: 4 }} placeholder="Apellidos"
-                value={form.apellidos} onChange={e => set("apellidos", e.target.value)} required />
-            </div>
-          </div>
-          <div>
-            <label style={sharedStyles.label}>FECHA DE NACIMIENTO</label>
-            <input type="date" style={{ ...sharedStyles.input, marginTop: 4 }}
-              value={form.fecha_nacimiento} onChange={e => set("fecha_nacimiento", e.target.value)} required />
-          </div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <label style={sharedStyles.label}>HAB. COMBATE (0-10)</label>
-              <input type="number" min={0} max={10} style={{ ...sharedStyles.input, marginTop: 4 }}
-                value={form.habilidades_combate} onChange={e => set("habilidades_combate", Number(e.target.value))} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={sharedStyles.label}>CONFIANZA (0-10)</label>
-              <input type="number" min={0} max={10} style={{ ...sharedStyles.input, marginTop: 4 }}
-                value={form.nivel_confianza} onChange={e => set("nivel_confianza", Number(e.target.value))} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={sharedStyles.label}>ESTADO</label>
-              <select style={{ ...sharedStyles.input, marginTop: 4 }}
-                value={form.estado_salud} onChange={e => set("estado_salud", e.target.value)}>
-                {["SANO","HERIDO","ENFERMO"].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
-          <button type="submit" style={sharedStyles.submitBtn} disabled={saving}>
-            {saving ? "PROCESANDO..." : "INCORPORAR AL CAMPAMENTO"}
-          </button>
-        </form>
-      </div>
-    </div>
-  )
 }
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
