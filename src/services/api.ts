@@ -1,18 +1,18 @@
-const BASE_URL = "" // ← vacío, usa el proxy de Vite
+const BASE_URL = ""; // ← vacío, usa el proxy de Vite
 
 export function getToken(): string {
-  return localStorage.getItem("token") ?? ""
+  return localStorage.getItem("token") ?? "";
 }
 
 export function getRol(): string {
-  return localStorage.getItem("rol") ?? ""
+  return localStorage.getItem("rol") ?? "";
 }
 
 export function authHeaders() {
   return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${getToken()}`,
-  }
+  };
 }
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -22,37 +22,39 @@ export async function login(email: string, password: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al iniciar sesión")
-  return data
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al iniciar sesión");
+  return data;
 }
 
 // ─── PERSONAS ────────────────────────────────────────────────────────────────
 
 export async function getPersonas() {
-  const res = await fetch(`${BASE_URL}/api/v1/personas`, { headers: authHeaders() })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al obtener personas")
-  return data
+  const res = await fetch(`${BASE_URL}/api/v1/personas`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al obtener personas");
+  return data;
 }
 
 export async function addPersona(persona: {
-  nombre: string
-  apellidos: string
-  fecha_nacimiento: string
-  habilidades_combate: number
-  nivel_confianza: number
-  estado_salud: string
+  nombre: string;
+  apellidos: string;
+  fecha_nacimiento: string;
+  habilidades_combate: number;
+  nivel_confianza: number;
+  estado_salud: string;
 }) {
   const res = await fetch(`${BASE_URL}/api/v1/personas`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(persona),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al agregar persona")
-  return data
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al agregar persona");
+  return data;
 }
 
 export async function updateEstadoPersona(id: number, estado_salud: string) {
@@ -60,178 +62,232 @@ export async function updateEstadoPersona(id: number, estado_salud: string) {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify({ estado_salud }),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al actualizar estado")
-  return data
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al actualizar estado");
+  return data;
 }
 
-export async function moverPersonaRol(id: number, cargo_id: number, motivo: string) {
+export async function moverPersonaRol(
+  id: number,
+  cargo_id: number,
+  motivo: string,
+) {
   const res = await fetch(`${BASE_URL}/api/v1/personas/${id}/cargo`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify({ cargo_id, motivo }),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al mover persona de rol")
-  return data
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al mover persona de rol");
+  return data;
 }
 
 // ─── RECURSOS ────────────────────────────────────────────────────────────────
 
 export async function getBodega() {
-  const res = await fetch(`${BASE_URL}/api/v1/recursos`, { headers: authHeaders() })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al obtener bodega")
-  return data
+  const res = await fetch(`${BASE_URL}/api/v1/recursos`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al obtener bodega");
+  return data;
 }
 
 export async function registrarMovimiento(movimiento: {
-  tipo_recurso_id: number
-  cantidad: number
-  tipo_movimiento: "ENTRADA" | "SALIDA"
-  origen: string
-  nota?: string
+  tipo_recurso_id: number;
+  cantidad: number;
+  tipo_movimiento: "ENTRADA" | "SALIDA";
+  origen: string;
+  nota?: string;
 }) {
   const res = await fetch(`${BASE_URL}/api/v1/recursos/movimiento`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(movimiento),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al registrar movimiento")
-  return data
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al registrar movimiento");
+  return data;
 }
 
 export async function getAlertas() {
-  const res = await fetch(`${BASE_URL}/api/v1/recursos/alertas`, { headers: authHeaders() })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al obtener alertas")
-  return data
+  const res = await fetch(`${BASE_URL}/api/v1/recursos/alertas`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al obtener alertas");
+  return data;
 }
 
 export async function getMovimientos() {
-  const res = await fetch(`${BASE_URL}/api/v1/recursos/movimientos`, { headers: authHeaders() })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al obtener movimientos")
-  return data
+  const res = await fetch(`${BASE_URL}/api/v1/recursos/movimientos`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al obtener movimientos");
+  return data;
 }
 
 // ─── CAMPAMENTOS ─────────────────────────────────────────────────────────────
 
 export async function getCampamentos() {
-  const res = await fetch(`${BASE_URL}/api/v1/campamentos`, { headers: authHeaders() })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al obtener campamentos")
-  return data
+  const res = await fetch(`${BASE_URL}/api/v1/campamentos`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al obtener campamentos");
+  return data;
 }
 
 export async function crearSolicitud(solicitud: {
-  campamento_destino_id: number
-  tipo_solicitud: "RECURSOS" | "PERSONAS"
-  detalle: object
+  campamento_destino_id: number;
+  tipo_solicitud: "RECURSOS" | "PERSONAS";
+  detalle: object;
 }) {
   const res = await fetch(`${BASE_URL}/api/v1/campamentos/solicitud`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(solicitud),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al crear solicitud")
-  return data
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al crear solicitud");
+  return data;
 }
 
-export async function responderSolicitud(id: number, estado: "APROBADA" | "RECHAZADA", nota_respuesta?: string) {
+export async function responderSolicitud(
+  id: number,
+  estado: "APROBADA" | "RECHAZADA",
+  nota_respuesta?: string,
+) {
   const res = await fetch(`${BASE_URL}/api/v1/campamentos/solicitud/${id}`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify({ estado, nota_respuesta }),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al responder solicitud")
-  return data
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al responder solicitud");
+  return data;
 }
 
 export async function getExploraciones() {
-  const res = await fetch(`${BASE_URL}/api/v1/campamentos/exploraciones`, { headers: authHeaders() })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al obtener exploraciones")
-  return data
+  const res = await fetch(`${BASE_URL}/api/v1/campamentos/exploraciones`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al obtener exploraciones");
+  return data;
 }
 
 export async function crearExploracion(exploracion: {
-  nombre_mision: string
-  fecha_salida: string
-  dias_estimados: number
-  dias_extra_max: number
-  descripcion_zona?: string
-  personas: { persona_id: number; rol_en_mision: string }[]
+  nombre_mision: string;
+  fecha_salida: string;
+  dias_estimados: number;
+  dias_extra_max: number;
+  descripcion_zona?: string;
+  personas: { persona_id: number; rol_en_mision: string }[];
 }) {
   const res = await fetch(`${BASE_URL}/api/v1/campamentos/exploraciones`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(exploracion),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al crear exploración")
-  return data
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al crear exploración");
+  return data;
 }
 
 export async function completarExploracion(
   id: number,
-  recursos_encontrados: { tipo_recurso_id: number; cantidad: number }[]
+  recursos_encontrados: { tipo_recurso_id: number; cantidad: number }[],
 ) {
-  const res = await fetch(`${BASE_URL}/api/v1/campamentos/exploraciones/${id}/completar`, {
-    method: "PATCH",
-    headers: authHeaders(),
-    body: JSON.stringify({ recursos_encontrados }),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al completar exploración")
-  return data
-
+  const res = await fetch(
+    `${BASE_URL}/api/v1/campamentos/exploraciones/${id}/completar`,
+    {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ recursos_encontrados }),
+    },
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al completar exploración");
+  return data;
 }
 
 // ─── CATÁLOGOS ────────────────────────────────────────────────────────────────
 
 export async function getTiposRecurso() {
-  const res = await fetch(`${BASE_URL}/api/v1/catalogos/tipos-recurso`, { headers: authHeaders() })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al obtener tipos de recurso")
-  return data
+  const res = await fetch(`${BASE_URL}/api/v1/catalogos/tipos-recurso`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.error || "Error al obtener tipos de recurso");
+  return data;
 }
 
 export async function getCargos() {
-  const res = await fetch(`${BASE_URL}/api/v1/catalogos/cargos`, { headers: authHeaders() })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al obtener cargos")
-  return data
+  const res = await fetch(`${BASE_URL}/api/v1/catalogos/cargos`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al obtener cargos");
+  return data;
 }
 
 export async function getDashboard() {
-  const res = await fetch(`${BASE_URL}/api/v1/catalogos/dashboard`, { headers: authHeaders() })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al obtener dashboard")
-  return data
+  const res = await fetch(`${BASE_URL}/api/v1/catalogos/dashboard`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al obtener dashboard");
+  return data;
 }
 
 export async function getSolicitudesRecibidas() {
-  const res = await fetch(`${BASE_URL}/api/v1/catalogos/solicitudes/recibidas`, { headers: authHeaders() })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al obtener solicitudes recibidas")
-  return data
+  const res = await fetch(
+    `${BASE_URL}/api/v1/catalogos/solicitudes/recibidas`,
+    { headers: authHeaders() },
+  );
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.error || "Error al obtener solicitudes recibidas");
+  return data;
 }
 
 export async function getSolicitudesEnviadas() {
-  const res = await fetch(`${BASE_URL}/api/v1/catalogos/solicitudes/enviadas`, { headers: authHeaders() })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al obtener solicitudes enviadas")
-  return data
+  const res = await fetch(`${BASE_URL}/api/v1/catalogos/solicitudes/enviadas`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.error || "Error al obtener solicitudes enviadas");
+  return data;
 }
 
 export async function getTraslados() {
-  const res = await fetch(`${BASE_URL}/api/v1/catalogos/traslados`, { headers: authHeaders() })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || "Error al obtener traslados")
-  return data
+  const res = await fetch(`${BASE_URL}/api/v1/catalogos/traslados`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al obtener traslados");
+  return data;
+}
+
+export async function asignarCargoIA(datos: {
+  nombre: string;
+  apellidos: string;
+  habilidades_combate: number;
+  nivel_confianza: number;
+  estado_salud: string;
+  edad: number;
+}) {
+  const res = await fetch(`${BASE_URL}/api/v1/ia/asignar-cargo`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(datos),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al asignar cargo");
+  return data;
 }

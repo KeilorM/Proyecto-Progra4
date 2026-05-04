@@ -69,6 +69,36 @@ export const addPersona = async (req, res) => {
   }
 };
 
+export const asignarCargoIA = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { cargo_id, razon, reglas_aplicadas } = req.body
+    const campamento_id = req.user.campamento
+
+    await pool.query(
+      `INSERT INTO asignacioncargo
+        (persona_id, cargo_id, campamento_id, es_temporal, asignado_por_ia, motivo)
+       VALUES ($1, $2, $3, FALSE, TRUE, $4)`,
+      [id, cargo_id, campamento_id, `${razon} | Reglas: ${reglas_aplicadas?.join(", ")}`]
+    )
+
+    await registrarLog({
+      usuario_id: req.user.id,
+      campamento_id,
+      accion: "ASIGNACION_CARGO_IA",
+      entidad_afectada: "asignacioncargo",
+      entidad_id: id,
+      detalle: { cargo_id, razon },
+      ip_origen: req.ip,
+    })
+
+    res.status(201).json({ mensaje: "Cargo asignado correctamente" })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ error: "Error servidor" })
+  }
+}
+
 export const updateEstadoPersona = async (req, res) => {
   try {
     const { id } = req.params;
