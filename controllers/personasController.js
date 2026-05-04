@@ -36,33 +36,39 @@ export const addPersona = async (req, res) => {
   try {
     const campamento_id = req.user.campamento;
     const {
-      nombre,
-      apellidos,
-      fecha_nacimiento,
-      habilidades_combate,
-      nivel_confianza,
-      estado_salud,
+      nombre, apellidos, fecha_nacimiento,
+      habilidades_combate, nivel_confianza, estado_salud,
     } = req.body;
 
-    const { rows } = await pool.query(
-      `INSERT INTO persona
-        (nombre, apellidos, fecha_nacimiento, habilidades_combate, nivel_confianza, estado_salud, esta_en_campamento, fecha_ingreso, campamento_id)
-       VALUES ($1, $2, $3, $4, $5, $6, TRUE, NOW(), $7)
-       RETURNING id`,
-      [nombre, apellidos, fecha_nacimiento, habilidades_combate, nivel_confianza, estado_salud, campamento_id]
+    // Las imágenes llegan procesadas por multer en req.files
+    const foto_url     = req.files?.foto?.[0]
+      ? `/uploads/personas/${req.files.foto[0].filename}`
+      : null;
+    const tarjeta_url  = req.files?.tarjeta?.[0]
+      ? `/uploads/personas/${req.files.tarjeta[0].filename}`
+      : null;
+
+    const [result] = await pool.query(
+      `INSERT INTO Persona
+        (nombre, apellidos, fecha_nacimiento, foto_url, tarjeta_id_url,
+         habilidades_combate, nivel_confianza, estado_salud,
+         esta_en_campamento, fecha_ingreso, campamento_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?)`,
+      [nombre, apellidos, fecha_nacimiento, foto_url, tarjeta_url,
+       habilidades_combate, nivel_confianza, estado_salud, campamento_id]
     );
 
     await registrarLog({
       usuario_id: req.user.id,
-      campamento_id: campamento_id,
+      campamento_id,
       accion: "INGRESO_PERSONA",
       entidad_afectada: "persona",
-      entidad_id: rows[0].id,
-      detalle: { nombre, apellidos, estado_salud },
+      entidad_id: result.insertId,
+      detalle: { nombre, apellidos, estado_salud, foto_url, tarjeta_url },
       ip_origen: req.ip,
     });
 
-    res.status(201).json({ mensaje: "Persona agregada", id: rows[0].id });
+    res.status(201).json({ mensaje: "Persona agregada", id: result.insertId });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error servidor" });

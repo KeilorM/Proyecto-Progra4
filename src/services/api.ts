@@ -38,7 +38,6 @@ export async function getPersonas() {
   if (!res.ok) throw new Error(data.error || "Error al obtener personas");
   return data;
 }
-
 export async function addPersona(persona: {
   nombre: string;
   apellidos: string;
@@ -46,14 +45,37 @@ export async function addPersona(persona: {
   habilidades_combate: number;
   nivel_confianza: number;
   estado_salud: string;
+  foto?: File | null;
+  tarjeta?: File | null;
 }) {
+  const form = new FormData();
+  form.append("nombre",              persona.nombre);
+  form.append("apellidos",           persona.apellidos);
+  form.append("fecha_nacimiento",    persona.fecha_nacimiento);
+  form.append("habilidades_combate", String(persona.habilidades_combate));
+  form.append("nivel_confianza",     String(persona.nivel_confianza));
+  form.append("estado_salud",        persona.estado_salud);
+  if (persona.foto)    form.append("foto",    persona.foto);
+  if (persona.tarjeta) form.append("tarjeta", persona.tarjeta);
+
   const res = await fetch(`${BASE_URL}/api/v1/personas`, {
     method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(persona),
+    headers: { Authorization: `Bearer ${getToken()}` }, // ← sin Content-Type, el browser lo pone solo con multipart boundary
+    body: form,
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Error al agregar persona");
+  return data;
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+
+export async function getDashboardMetricas() {
+  const res = await fetch(`${BASE_URL}/api/v1/dashboard/metricas`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al obtener métricas");
   return data;
 }
 
