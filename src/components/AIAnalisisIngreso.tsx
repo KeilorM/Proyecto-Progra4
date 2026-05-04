@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { addPersona } from "../services/api";
+import { addPersona, asignarCargoIA } from "../services/api"
 
 // ─── TIPOS ───────────────────────────────────────────────────────────────────
 interface FormPersona {
@@ -757,23 +757,57 @@ export default function ModalAgregarPersonaIA({
 
   // ── Confirmar ingreso ──
   const confirmarIngreso = async () => {
-    if (!reporte) return;
+    if (!reporte) return
     try {
-      setGuardando(true);
-      await addPersona(form);
-      onSuccess();
-      onClose();
-    } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-    } finally {
-      setGuardando(false);
-    }
-  };
+      setGuardando(true)
 
-  // ── Rechazar manualmente ──
-  const rechazarIngreso = () => {
-    setPaso("rechazado");
-  };
+      // 1. Registrar la persona
+      const nuevaPersona = await addPersona(form)
+
+      // 2. Calcular edad
+      const edad = new Date().getFullYear() - new Date(form.fecha_nacimiento).getFullYear()
+
+      // 3. IA asigna cargo automáticamente
+      const asignacion = await asignarCargoIA({
+        nombre: form.nombre,
+        apellidos: form.apellidos,
+        habilidades_combate: form.habilidades_combate,
+        nivel_confianza: form.nivel_confianza,
+        estado_salud: form.estado_salud,
+        edad,
+      })
+
+      // Actualizar el cargo_sugerido en pantalla con el real
+      reporte.cargo_sugerido = asignacion.cargo_nombre
+
+      // 4. Registrar la asignación de cargo en el backend
+      const token = localStorage.getItem("token")
+      await fetch(`/api/v1/personas/${nuevaPersona.id}/cargo-ia`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          cargo_id: asignacion.cargo_id,
+          razon: asignacion.razon,
+          reglas_aplicadas: asignacion.reglas_aplicadas,
+        }),
+      })
+
+      onSuccess()
+      onClose()
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message)
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+    // ── Rechazar manualmente ──
+    const rechazarIngreso = () => {
+      setPaso("rechazado");
+    };
 
   return (
     <div style={overlay} onClick={onClose}>

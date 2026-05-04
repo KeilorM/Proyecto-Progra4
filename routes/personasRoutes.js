@@ -7,6 +7,7 @@ import {
   moverPersonaRol,
   getPersonaById,
   getCargosPersona,
+  asignarCargoIA,
 } from "../controllers/personasController.js";
 
 const router = express.Router();
@@ -17,5 +18,6 @@ router.get("/:id", verifyToken, verifyRol("ADMIN"), getPersonaById);
 router.get("/:id/cargo", verifyToken, verifyRol("ADMIN"), getCargosPersona);
 router.patch("/:id/estado", verifyToken, verifyRol("ADMIN"), updateEstadoPersona);
 router.patch("/:id/cargo", verifyToken, verifyRol("ADMIN"), moverPersonaRol);
+router.post("/:id/cargo-ia", verifyToken, verifyRol("ADMIN"), asignarCargoIA);
 
 export default router;
