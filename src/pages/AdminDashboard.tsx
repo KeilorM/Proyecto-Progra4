@@ -4,6 +4,7 @@ import { sharedStyles, theme } from "../styles/theme"
 import { useInactivityTimer } from "../hooks/useInactivityTimer"
 import { getPersonas, updateEstadoPersona, getSolicitudesRecibidas, responderSolicitud } from "../services/api"
 import ModalAgregarPersonaIA from "../components/AIAnalisisIngreso"
+import MetricasDashboard from "../components/MetricasDashboard"
 
 // ─── TIPOS ───────────────────────────────────────────────────────────────────
 interface Solicitud {
@@ -109,7 +110,8 @@ export default function AdminDashboard() {
       <PageHeader titulo="COMANDO CENTRAL" subtitulo="Gestión de Supervivientes" />
 
       <main style={sharedStyles.main}>
-
+        {/* Dashboard métricas IA */}
+        <MetricasDashboard />
         {/* Stats */}
         <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
           {ESTADOS.map(e => {
@@ -326,6 +328,5 @@ export default function AdminDashboard() {
       {modalOpen && (
         <ModalAgregarPersonaIA onClose={() => setModal(false)} onSuccess={cargar} />
       )}
-    </div>
-  )
+    </div>  )
 }

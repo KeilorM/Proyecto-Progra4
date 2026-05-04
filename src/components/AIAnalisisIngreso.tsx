@@ -101,11 +101,19 @@ function FormularioIngreso({
   setForm,
   onAnalizar,
   analizando,
+  foto,
+  tarjeta,
+  onFotoChange,
+  onTarjetaChange,
 }: {
   form: FormPersona;
   setForm: (f: FormPersona) => void;
   onAnalizar: () => void;
   analizando: boolean;
+  foto: File | null;
+  tarjeta: File | null;
+  onFotoChange: (f: File | null) => void;
+  onTarjetaChange: (f: File | null) => void;
 }) {
   const set = (field: keyof FormPersona, value: string | number) =>
     setForm({ ...form, [field]: value });
@@ -243,6 +251,173 @@ function FormularioIngreso({
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      {/* ── FOTO Y TARJETA DE IDENTIFICACIÓN ── */}
+      <div style={{ display: "flex", gap: 12 }}>
+        {/* Foto */}
+        <div style={{ flex: 1 }}>
+          <label style={label}>Foto del superviviente</label>
+          <div
+            style={{
+              marginTop: 4,
+              border: `1px dashed ${t.border}`,
+              padding: 12,
+              background: "rgba(30,41,59,0.4)",
+              position: "relative",
+              cursor: "pointer",
+              minHeight: 72,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{
+                position: "absolute",
+                inset: 0,
+                opacity: 0,
+                cursor: "pointer",
+                width: "100%",
+                height: "100%",
+              }}
+              onChange={(e) => onFotoChange(e.target.files?.[0] ?? null)}
+            />
+            {foto ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <img
+                  src={URL.createObjectURL(foto)}
+                  alt="preview foto"
+                  style={{
+                    width: 52,
+                    height: 52,
+                    objectFit: "cover",
+                    border: `1px solid ${t.green}`,
+                  }}
+                />
+                <div>
+                  <div style={{ fontFamily: t.mono, fontSize: 11, color: t.green }}>
+                    ✓ Foto cargada
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: t.mono,
+                      fontSize: 10,
+                      color: t.dim,
+                      marginTop: 2,
+                      maxWidth: 120,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {foto.name}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  textAlign: "center",
+                  fontFamily: t.mono,
+                  fontSize: 11,
+                  color: t.dim,
+                  pointerEvents: "none",
+                }}
+              >
+                <div style={{ fontSize: 20, marginBottom: 4, opacity: 0.5 }}>◈</div>
+                Seleccionar foto
+                <div style={{ fontSize: 10, marginTop: 2, opacity: 0.6 }}>
+                  JPG, PNG o WebP · máx 5MB
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Tarjeta de identificación */}
+        <div style={{ flex: 1 }}>
+          <label style={label}>Tarjeta de identificación</label>
+          <div
+            style={{
+              marginTop: 4,
+              border: `1px dashed ${t.border}`,
+              padding: 12,
+              background: "rgba(30,41,59,0.4)",
+              position: "relative",
+              cursor: "pointer",
+              minHeight: 72,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{
+                position: "absolute",
+                inset: 0,
+                opacity: 0,
+                cursor: "pointer",
+                width: "100%",
+                height: "100%",
+              }}
+              onChange={(e) => onTarjetaChange(e.target.files?.[0] ?? null)}
+            />
+            {tarjeta ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <img
+                  src={URL.createObjectURL(tarjeta)}
+                  alt="preview tarjeta"
+                  style={{
+                    width: 52,
+                    height: 52,
+                    objectFit: "cover",
+                    border: `1px solid ${t.blue}`,
+                  }}
+                />
+                <div>
+                  <div style={{ fontFamily: t.mono, fontSize: 11, color: t.blue }}>
+                    ✓ Tarjeta cargada
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: t.mono,
+                      fontSize: 10,
+                      color: t.dim,
+                      marginTop: 2,
+                      maxWidth: 120,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {tarjeta.name}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  textAlign: "center",
+                  fontFamily: t.mono,
+                  fontSize: 11,
+                  color: t.dim,
+                  pointerEvents: "none",
+                }}
+              >
+                <div style={{ fontSize: 20, marginBottom: 4, opacity: 0.5 }}>▣</div>
+                Seleccionar tarjeta
+                <div style={{ fontSize: 10, marginTop: 2, opacity: 0.6 }}>
+                  JPG, PNG o WebP · máx 5MB
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -701,8 +876,12 @@ export default function ModalAgregarPersonaIA({
     estado_salud: "SANO",
   });
   const [reporte, setReporte] = useState<ReporteIA | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError]     = useState("");
   const [guardando, setGuardando] = useState(false);
+
+  // ── Estado de archivos (nuevo) ──
+  const [foto,    setFoto]    = useState<File | null>(null);
+  const [tarjeta, setTarjeta] = useState<File | null>(null);
 
   // ── Llamar al backend para análisis IA ──
   const analizarConIA = async () => {
@@ -757,15 +936,17 @@ export default function ModalAgregarPersonaIA({
 
   // ── Confirmar ingreso ──
   const confirmarIngreso = async () => {
-    if (!reporte) return
+    if (!reporte) return;
     try {
-      setGuardando(true)
+      setGuardando(true);
 
-      // 1. Registrar la persona
-      const nuevaPersona = await addPersona(form)
+      // 1. Registrar la persona — ahora incluye foto y tarjeta
+      const nuevaPersona = await addPersona({ ...form, foto, tarjeta });
 
       // 2. Calcular edad
-      const edad = new Date().getFullYear() - new Date(form.fecha_nacimiento).getFullYear()
+      const edad =
+        new Date().getFullYear() -
+        new Date(form.fecha_nacimiento).getFullYear();
 
       // 3. IA asigna cargo automáticamente
       const asignacion = await asignarCargoIA({
@@ -775,39 +956,39 @@ export default function ModalAgregarPersonaIA({
         nivel_confianza: form.nivel_confianza,
         estado_salud: form.estado_salud,
         edad,
-      })
+      });
 
       // Actualizar el cargo_sugerido en pantalla con el real
-      reporte.cargo_sugerido = asignacion.cargo_nombre
+      reporte.cargo_sugerido = asignacion.cargo_nombre;
 
       // 4. Registrar la asignación de cargo en el backend
-      const token = localStorage.getItem("token")
+      const token = localStorage.getItem("token");
       await fetch(`/api/v1/personas/${nuevaPersona.id}/cargo-ia`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           cargo_id: asignacion.cargo_id,
           razon: asignacion.razon,
           reglas_aplicadas: asignacion.reglas_aplicadas,
         }),
-      })
+      });
 
-      onSuccess()
-      onClose()
+      onSuccess();
+      onClose();
     } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message)
+      if (err instanceof Error) setError(err.message);
     } finally {
-      setGuardando(false)
+      setGuardando(false);
     }
-  }
+  };
 
-    // ── Rechazar manualmente ──
-    const rechazarIngreso = () => {
-      setPaso("rechazado");
-    };
+  // ── Rechazar manualmente ──
+  const rechazarIngreso = () => {
+    setPaso("rechazado");
+  };
 
   return (
     <div style={overlay} onClick={onClose}>
@@ -847,7 +1028,8 @@ export default function ModalAgregarPersonaIA({
                       borderRadius: "50%",
                       border: `1px solid`,
                       borderColor:
-                        paso === p || (paso === "rechazado" && p === "reporte")
+                        paso === p ||
+                        (paso === "rechazado" && p === "reporte")
                           ? t.green
                           : ["formulario", "analizando", "reporte"].indexOf(
                                 paso,
@@ -944,6 +1126,10 @@ export default function ModalAgregarPersonaIA({
             setForm={setForm}
             onAnalizar={analizarConIA}
             analizando={false}
+            foto={foto}
+            tarjeta={tarjeta}
+            onFotoChange={setFoto}
+            onTarjetaChange={setTarjeta}
           />
         )}
 
