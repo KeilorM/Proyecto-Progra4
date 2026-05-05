@@ -7,9 +7,9 @@ import recursosRoutes    from "./routes/recursosRoutes.js";
 import campamentosRoutes from "./routes/campamentosRoutes.js";
 import catalogosRoutes   from "./routes/catalogosRoutes.js";
 import iaRoutes          from "./routes/iaRoutes.js";
-import dashboardRoutes   from "./routes/dashboardRoutes.js"; // ← una sola vez
+import dashboardRoutes   from "./routes/dashboardRoutes.js";
 
-const app = express(); // ← app debe existir ANTES de los app.use
+const app = express(); // app debe existir ANTES de los app.use
 
 app.use(cors());
 app.use(express.json());
@@ -21,7 +21,7 @@ app.use("/api/v1/recursos",    recursosRoutes);
 app.use("/api/v1/campamentos", campamentosRoutes);
 app.use("/api/v1/catalogos",   catalogosRoutes);
 app.use("/api/v1/ia",          iaRoutes);
-app.use("/api/v1/dashboard",   dashboardRoutes); // ← una sola vez
+app.use("/api/v1/dashboard",   dashboardRoutes);
 
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT}`));

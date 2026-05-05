@@ -87,7 +87,6 @@ Incluye entre 4 y 6 criterios.`;
     else reporte.cargo_sugerido = "Recolector de Agua";
 
     return res.json(reporte);
-    return res.json(reporte);
   } catch (err) {
     console.error("Error IA analisis ingreso:", err);
     return res.status(500).json({ error: "Error al procesar el analisis con IA." });
