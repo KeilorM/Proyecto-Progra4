@@ -4,15 +4,26 @@
     {
       "src": "api/index.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
+      "src": "/auth/login",
       "dest": "/api/index.js"
     },
     {
-      "src": "/auth/(.*)",
+      "src": "/api/v1/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/uploads/(.*)",
       "dest": "/api/index.js"
     },
     {
