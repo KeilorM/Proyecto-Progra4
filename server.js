@@ -23,5 +23,9 @@ app.use("/api/v1/catalogos",   catalogosRoutes);
 app.use("/api/v1/ia",          iaRoutes);
 app.use("/api/v1/dashboard",   dashboardRoutes);
 
-const PORT = 3000;
-app.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT}`));
+if (process.env.NODE_ENV !== "production") {
+  const PORT = 3000;
+  app.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT}`));
+}
+
+export default app;
