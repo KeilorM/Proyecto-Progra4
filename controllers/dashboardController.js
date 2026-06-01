@@ -1,12 +1,11 @@
-import pool from "../db/connection.js";
+import pool from '../db/connection.js'
 
 export const getMetricas = async (req, res) => {
   try {
-    const campamento_id = req.user.campamento;
+    const campamento_id = req.user.campamento
 
     const [personas, recursos, alertas, exploraciones, solicitudes, movimientos] =
       await Promise.all([
-
         pool.query(
           `SELECT estado_salud, COUNT(*) as total
            FROM persona
@@ -59,16 +58,16 @@ export const getMetricas = async (req, res) => {
            ORDER BY dia ASC`,
           [campamento_id]
         ),
-      ]);
+      ])
 
-    const personasPorEstado = {};
+    const personasPorEstado = {}
     for (const row of personas.rows) {
-      personasPorEstado[row.estado_salud] = Number(row.total);
+      personasPorEstado[row.estado_salud] = Number(row.total)
     }
 
-    const exploByEstado = {};
+    const exploByEstado = {}
     for (const row of exploraciones.rows) {
-      exploByEstado[row.estado] = Number(row.total);
+      exploByEstado[row.estado] = Number(row.total)
     }
 
     res.json({
@@ -81,9 +80,9 @@ export const getMetricas = async (req, res) => {
       exploraciones: exploByEstado,
       solicitudes_pendientes: Number(solicitudes.rows[0].total),
       movimientos_semana: movimientos.rows,
-    });
+    })
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error servidor" });
+    console.error(error)
+    res.status(500).json({ error: 'Error servidor' })
   }
-};
+}

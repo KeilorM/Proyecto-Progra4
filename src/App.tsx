@@ -1,11 +1,11 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
-import PrivateRoute from "./components/PrivateRoute"
-import Login from "./pages/Login"
-import AdminDashboard from "./pages/AdminDashboard"
-import TrabajadorDashboard from "./pages/TrabajadorDashboard"
-import BodegaPage from "./pages/BodegaPage"
-import ExploracionesPage from "./pages/ExploracionesPage"
+import PrivateRoute from './components/PrivateRoute'
+import Login from './pages/Login'
+import AdminDashboard from './pages/AdminDashboard'
+import TrabajadorDashboard from './pages/TrabajadorDashboard'
+import BodegaPage from './pages/BodegaPage'
+import ExploracionesPage from './pages/ExploracionesPage'
 
 function App() {
   return (
@@ -18,7 +18,7 @@ function App() {
         <Route
           path="/admin"
           element={
-            <PrivateRoute rolesPermitidos={["ADMIN"]}>
+            <PrivateRoute rolesPermitidos={['ADMIN']}>
               <AdminDashboard />
             </PrivateRoute>
           }
@@ -28,7 +28,7 @@ function App() {
         <Route
           path="/trabajador"
           element={
-            <PrivateRoute rolesPermitidos={["TRABAJADOR"]}>
+            <PrivateRoute rolesPermitidos={['TRABAJADOR']}>
               <TrabajadorDashboard />
             </PrivateRoute>
           }
@@ -38,7 +38,7 @@ function App() {
         <Route
           path="/bodega"
           element={
-            <PrivateRoute rolesPermitidos={["GESTOR_RECURSOS", "ADMIN"]}>
+            <PrivateRoute rolesPermitidos={['GESTOR_RECURSOS', 'ADMIN']}>
               <BodegaPage />
             </PrivateRoute>
           }
@@ -48,7 +48,7 @@ function App() {
         <Route
           path="/exploraciones"
           element={
-            <PrivateRoute rolesPermitidos={["ENCARGADO_VIAJES"]}>
+            <PrivateRoute rolesPermitidos={['ENCARGADO_VIAJES']}>
               <ExploracionesPage />
             </PrivateRoute>
           }

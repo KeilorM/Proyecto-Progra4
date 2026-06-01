@@ -1,99 +1,99 @@
-import { useState } from "react";
-import { addPersona, asignarCargoIA } from "../services/api"
+import { useState } from 'react'
+import { addPersona, asignarCargoIA } from '../services/api'
 
 // ─── TIPOS ───────────────────────────────────────────────────────────────────
 interface FormPersona {
-  nombre: string;
-  apellidos: string;
-  fecha_nacimiento: string;
-  habilidades_combate: number;
-  nivel_confianza: number;
-  estado_salud: string;
+  nombre: string
+  apellidos: string
+  fecha_nacimiento: string
+  habilidades_combate: number
+  nivel_confianza: number
+  estado_salud: string
 }
 
 interface CriterioIA {
-  criterio: string;
-  valor: string;
-  peso: "ALTO" | "MEDIO" | "BAJO";
-  resultado: "POSITIVO" | "NEGATIVO" | "NEUTRAL";
-  explicacion: string;
+  criterio: string
+  valor: string
+  peso: 'ALTO' | 'MEDIO' | 'BAJO'
+  resultado: 'POSITIVO' | 'NEGATIVO' | 'NEUTRAL'
+  explicacion: string
 }
 
 interface ReporteIA {
-  decision: "ACEPTADO" | "RECHAZADO" | "REVISION";
-  puntuacion: number;
-  resumen: string;
-  criterios: CriterioIA[];
-  riesgo_zombie: "BAJO" | "MEDIO" | "ALTO";
-  cargo_sugerido: string;
-  advertencias: string[];
+  decision: 'ACEPTADO' | 'RECHAZADO' | 'REVISION'
+  puntuacion: number
+  resumen: string
+  criterios: CriterioIA[]
+  riesgo_zombie: 'BAJO' | 'MEDIO' | 'ALTO'
+  cargo_sugerido: string
+  advertencias: string[]
 }
 
 // ─── ESTILOS TEMÁTICOS ────────────────────────────────────────────────────────
 const t = {
-  green: "#10b981",
-  red: "#ef4444",
-  yellow: "#facc15",
-  blue: "#38bdf8",
-  dim: "#475569",
-  border: "#1e293b",
-  surface: "rgba(15,23,42,0.95)",
+  green: '#10b981',
+  red: '#ef4444',
+  yellow: '#facc15',
+  blue: '#38bdf8',
+  dim: '#475569',
+  border: '#1e293b',
+  surface: 'rgba(15,23,42,0.95)',
   mono: "'JetBrains Mono', 'Courier New', monospace",
-  text: "#e2e8f0",
-};
+  text: '#e2e8f0',
+}
 
 const overlay: React.CSSProperties = {
-  position: "fixed",
+  position: 'fixed',
   inset: 0,
-  background: "rgba(0,0,0,0.85)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
+  background: 'rgba(0,0,0,0.85)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   zIndex: 1000,
-  backdropFilter: "blur(4px)",
-};
+  backdropFilter: 'blur(4px)',
+}
 
 const modal: React.CSSProperties = {
-  background: "#0f172a",
+  background: '#0f172a',
   border: `1px solid ${t.border}`,
-  width: "min(760px, 95vw)",
-  maxHeight: "90vh",
-  overflowY: "auto",
-  position: "relative",
-};
+  width: 'min(760px, 95vw)',
+  maxHeight: '90vh',
+  overflowY: 'auto',
+  position: 'relative',
+}
 
 const label: React.CSSProperties = {
   fontFamily: t.mono,
   fontSize: 11,
   letterSpacing: 2,
   color: t.dim,
-  textTransform: "uppercase",
-};
+  textTransform: 'uppercase',
+}
 
 const input: React.CSSProperties = {
-  width: "100%",
-  background: "rgba(30,41,59,0.8)",
+  width: '100%',
+  background: 'rgba(30,41,59,0.8)',
   border: `1px solid ${t.border}`,
   color: t.text,
   fontFamily: t.mono,
   fontSize: 13,
-  padding: "10px 12px",
-  outline: "none",
-  boxSizing: "border-box",
-};
+  padding: '10px 12px',
+  outline: 'none',
+  boxSizing: 'border-box',
+}
 
-const btn = (color: string, bg = "transparent"): React.CSSProperties => ({
+const btn = (color: string, bg = 'transparent'): React.CSSProperties => ({
   fontFamily: t.mono,
   fontSize: 12,
   letterSpacing: 2,
-  padding: "10px 20px",
+  padding: '10px 20px',
   border: `1px solid ${color}`,
   background: bg,
   color,
-  cursor: "pointer",
-  textTransform: "uppercase",
-  transition: "all 0.2s",
-});
+  cursor: 'pointer',
+  textTransform: 'uppercase',
+  transition: 'all 0.2s',
+})
 
 // ─── PASO 1: FORMULARIO ───────────────────────────────────────────────────────
 function FormularioIngreso({
@@ -106,59 +106,54 @@ function FormularioIngreso({
   onFotoChange,
   onTarjetaChange,
 }: {
-  form: FormPersona;
-  setForm: (f: FormPersona) => void;
-  onAnalizar: () => void;
-  analizando: boolean;
-  foto: File | null;
-  tarjeta: File | null;
-  onFotoChange: (f: File | null) => void;
-  onTarjetaChange: (f: File | null) => void;
+  form: FormPersona
+  setForm: (f: FormPersona) => void
+  onAnalizar: () => void
+  analizando: boolean
+  foto: File | null
+  tarjeta: File | null
+  onFotoChange: (f: File | null) => void
+  onTarjetaChange: (f: File | null) => void
 }) {
   const set = (field: keyof FormPersona, value: string | number) =>
-    setForm({ ...form, [field]: value });
+    setForm({ ...form, [field]: value })
 
   return (
-    <div
-      style={{ padding: 28, display: "flex", flexDirection: "column", gap: 16 }}
-    >
+    <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Aviso IA */}
       <div
         style={{
           border: `1px solid rgba(16,185,129,0.3)`,
-          background: "rgba(16,185,129,0.05)",
-          padding: "10px 14px",
-          display: "flex",
+          background: 'rgba(16,185,129,0.05)',
+          padding: '10px 14px',
+          display: 'flex',
           gap: 10,
-          alignItems: "flex-start",
+          alignItems: 'flex-start',
         }}
       >
-        <span style={{ color: t.green, fontFamily: t.mono, fontSize: 11 }}>
-          ◈ IA
-        </span>
+        <span style={{ color: t.green, fontFamily: t.mono, fontSize: 11 }}>◈ IA</span>
         <span
           style={{
             fontFamily: t.mono,
             fontSize: 11,
-            color: "#94a3b8",
+            color: '#94a3b8',
             lineHeight: 1.5,
           }}
         >
-          Los datos serán analizados por inteligencia artificial antes de
-          confirmar el ingreso. Se generará un reporte con criterios
-          transparentes que usted podrá aceptar o corregir.
+          Los datos serán analizados por inteligencia artificial antes de confirmar el ingreso. Se
+          generará un reporte con criterios transparentes que usted podrá aceptar o corregir.
         </span>
       </div>
 
       {/* Nombre y apellidos */}
-      <div style={{ display: "flex", gap: 12 }}>
+      <div style={{ display: 'flex', gap: 12 }}>
         <div style={{ flex: 1 }}>
           <label style={label}>Nombre</label>
           <input
             style={{ ...input, marginTop: 4 }}
             placeholder="Nombre"
             value={form.nombre}
-            onChange={(e) => set("nombre", e.target.value)}
+            onChange={(e) => set('nombre', e.target.value)}
             required
           />
         </div>
@@ -168,7 +163,7 @@ function FormularioIngreso({
             style={{ ...input, marginTop: 4 }}
             placeholder="Apellidos"
             value={form.apellidos}
-            onChange={(e) => set("apellidos", e.target.value)}
+            onChange={(e) => set('apellidos', e.target.value)}
             required
           />
         </div>
@@ -181,13 +176,13 @@ function FormularioIngreso({
           type="date"
           style={{ ...input, marginTop: 4 }}
           value={form.fecha_nacimiento}
-          onChange={(e) => set("fecha_nacimiento", e.target.value)}
+          onChange={(e) => set('fecha_nacimiento', e.target.value)}
           required
         />
       </div>
 
       {/* Habilidades */}
-      <div style={{ display: "flex", gap: 12 }}>
+      <div style={{ display: 'flex', gap: 12 }}>
         <div style={{ flex: 1 }}>
           <label style={label}>Hab. Combate (0-10)</label>
           <input
@@ -196,19 +191,16 @@ function FormularioIngreso({
             max={10}
             style={{ ...input, marginTop: 4 }}
             value={form.habilidades_combate}
-            onChange={(e) => set("habilidades_combate", Number(e.target.value))}
+            onChange={(e) => set('habilidades_combate', Number(e.target.value))}
           />
-          <div style={{ display: "flex", gap: 2, marginTop: 6 }}>
+          <div style={{ display: 'flex', gap: 2, marginTop: 6 }}>
             {Array.from({ length: 10 }).map((_, i) => (
               <div
                 key={i}
                 style={{
                   flex: 1,
                   height: 4,
-                  background:
-                    i < form.habilidades_combate
-                      ? "#ef4444"
-                      : "rgba(51,65,85,0.5)",
+                  background: i < form.habilidades_combate ? '#ef4444' : 'rgba(51,65,85,0.5)',
                 }}
               />
             ))}
@@ -222,17 +214,16 @@ function FormularioIngreso({
             max={10}
             style={{ ...input, marginTop: 4 }}
             value={form.nivel_confianza}
-            onChange={(e) => set("nivel_confianza", Number(e.target.value))}
+            onChange={(e) => set('nivel_confianza', Number(e.target.value))}
           />
-          <div style={{ display: "flex", gap: 2, marginTop: 6 }}>
+          <div style={{ display: 'flex', gap: 2, marginTop: 6 }}>
             {Array.from({ length: 10 }).map((_, i) => (
               <div
                 key={i}
                 style={{
                   flex: 1,
                   height: 4,
-                  background:
-                    i < form.nivel_confianza ? t.green : "rgba(51,65,85,0.5)",
+                  background: i < form.nivel_confianza ? t.green : 'rgba(51,65,85,0.5)',
                 }}
               />
             ))}
@@ -243,9 +234,9 @@ function FormularioIngreso({
           <select
             style={{ ...input, marginTop: 4 }}
             value={form.estado_salud}
-            onChange={(e) => set("estado_salud", e.target.value)}
+            onChange={(e) => set('estado_salud', e.target.value)}
           >
-            {["SANO", "HERIDO", "ENFERMO"].map((s) => (
+            {['SANO', 'HERIDO', 'ENFERMO'].map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
@@ -255,7 +246,7 @@ function FormularioIngreso({
       </div>
 
       {/* ── FOTO Y TARJETA DE IDENTIFICACIÓN ── */}
-      <div style={{ display: "flex", gap: 12 }}>
+      <div style={{ display: 'flex', gap: 12 }}>
         {/* Foto */}
         <div style={{ flex: 1 }}>
           <label style={label}>Foto del superviviente</label>
@@ -264,37 +255,37 @@ function FormularioIngreso({
               marginTop: 4,
               border: `1px dashed ${t.border}`,
               padding: 12,
-              background: "rgba(30,41,59,0.4)",
-              position: "relative",
-              cursor: "pointer",
+              background: 'rgba(30,41,59,0.4)',
+              position: 'relative',
+              cursor: 'pointer',
               minHeight: 72,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
               style={{
-                position: "absolute",
+                position: 'absolute',
                 inset: 0,
                 opacity: 0,
-                cursor: "pointer",
-                width: "100%",
-                height: "100%",
+                cursor: 'pointer',
+                width: '100%',
+                height: '100%',
               }}
               onChange={(e) => onFotoChange(e.target.files?.[0] ?? null)}
             />
             {foto ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <img
                   src={URL.createObjectURL(foto)}
                   alt="preview foto"
                   style={{
                     width: 52,
                     height: 52,
-                    objectFit: "cover",
+                    objectFit: 'cover',
                     border: `1px solid ${t.green}`,
                   }}
                 />
@@ -309,9 +300,9 @@ function FormularioIngreso({
                       color: t.dim,
                       marginTop: 2,
                       maxWidth: 120,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     {foto.name}
@@ -321,11 +312,11 @@ function FormularioIngreso({
             ) : (
               <div
                 style={{
-                  textAlign: "center",
+                  textAlign: 'center',
                   fontFamily: t.mono,
                   fontSize: 11,
                   color: t.dim,
-                  pointerEvents: "none",
+                  pointerEvents: 'none',
                 }}
               >
                 <div style={{ fontSize: 20, marginBottom: 4, opacity: 0.5 }}>◈</div>
@@ -346,37 +337,37 @@ function FormularioIngreso({
               marginTop: 4,
               border: `1px dashed ${t.border}`,
               padding: 12,
-              background: "rgba(30,41,59,0.4)",
-              position: "relative",
-              cursor: "pointer",
+              background: 'rgba(30,41,59,0.4)',
+              position: 'relative',
+              cursor: 'pointer',
               minHeight: 72,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
               style={{
-                position: "absolute",
+                position: 'absolute',
                 inset: 0,
                 opacity: 0,
-                cursor: "pointer",
-                width: "100%",
-                height: "100%",
+                cursor: 'pointer',
+                width: '100%',
+                height: '100%',
               }}
               onChange={(e) => onTarjetaChange(e.target.files?.[0] ?? null)}
             />
             {tarjeta ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <img
                   src={URL.createObjectURL(tarjeta)}
                   alt="preview tarjeta"
                   style={{
                     width: 52,
                     height: 52,
-                    objectFit: "cover",
+                    objectFit: 'cover',
                     border: `1px solid ${t.blue}`,
                   }}
                 />
@@ -391,9 +382,9 @@ function FormularioIngreso({
                       color: t.dim,
                       marginTop: 2,
                       maxWidth: 120,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     {tarjeta.name}
@@ -403,11 +394,11 @@ function FormularioIngreso({
             ) : (
               <div
                 style={{
-                  textAlign: "center",
+                  textAlign: 'center',
                   fontFamily: t.mono,
                   fontSize: 11,
                   color: t.dim,
-                  pointerEvents: "none",
+                  pointerEvents: 'none',
                 }}
               >
                 <div style={{ fontSize: 20, marginBottom: 4, opacity: 0.5 }}>▣</div>
@@ -424,23 +415,14 @@ function FormularioIngreso({
       {/* Botón analizar */}
       <button
         onClick={onAnalizar}
-        disabled={
-          analizando ||
-          !form.nombre ||
-          !form.apellidos ||
-          !form.fecha_nacimiento
-        }
+        disabled={analizando || !form.nombre || !form.apellidos || !form.fecha_nacimiento}
         style={{
-          ...btn(
-            t.green,
-            analizando ? "rgba(16,185,129,0.1)" : "rgba(16,185,129,0.15)",
-          ),
+          ...btn(t.green, analizando ? 'rgba(16,185,129,0.1)' : 'rgba(16,185,129,0.15)'),
           marginTop: 8,
-          opacity:
-            !form.nombre || !form.apellidos || !form.fecha_nacimiento ? 0.5 : 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          opacity: !form.nombre || !form.apellidos || !form.fecha_nacimiento ? 0.5 : 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           gap: 8,
         }}
       >
@@ -448,22 +430,22 @@ function FormularioIngreso({
           <>
             <span
               style={{
-                display: "inline-block",
+                display: 'inline-block',
                 width: 8,
                 height: 8,
-                borderRadius: "50%",
+                borderRadius: '50%',
                 background: t.green,
-                animation: "blink 1s step-end infinite",
+                animation: 'blink 1s step-end infinite',
               }}
             />
             ANALIZANDO CON IA...
           </>
         ) : (
-          "◈  ANALIZAR CON IA"
+          '◈  ANALIZAR CON IA'
         )}
       </button>
     </div>
-  );
+  )
 }
 
 // ─── PASO 2: REPORTE IA ───────────────────────────────────────────────────────
@@ -475,55 +457,47 @@ function ReporteAnalisis({
   onEditar,
   guardando,
 }: {
-  reporte: ReporteIA;
-  form: FormPersona;
-  onAceptar: () => void;
-  onRechazar: () => void;
-  onEditar: () => void;
-  guardando: boolean;
+  reporte: ReporteIA
+  form: FormPersona
+  onAceptar: () => void
+  onRechazar: () => void
+  onEditar: () => void
+  guardando: boolean
 }) {
   const decisionColor =
-    reporte.decision === "ACEPTADO"
-      ? t.green
-      : reporte.decision === "RECHAZADO"
-        ? t.red
-        : t.yellow;
+    reporte.decision === 'ACEPTADO' ? t.green : reporte.decision === 'RECHAZADO' ? t.red : t.yellow
 
   const riesgoColor =
-    reporte.riesgo_zombie === "BAJO"
+    reporte.riesgo_zombie === 'BAJO'
       ? t.green
-      : reporte.riesgo_zombie === "MEDIO"
+      : reporte.riesgo_zombie === 'MEDIO'
         ? t.yellow
-        : t.red;
+        : t.red
 
-  const pesoColor = (p: string) =>
-    p === "ALTO" ? "#f87171" : p === "MEDIO" ? t.yellow : "#94a3b8";
+  const pesoColor = (p: string) => (p === 'ALTO' ? '#f87171' : p === 'MEDIO' ? t.yellow : '#94a3b8')
 
-  const resultadoIcon = (r: string) =>
-    r === "POSITIVO" ? "▲" : r === "NEGATIVO" ? "▼" : "◆";
+  const resultadoIcon = (r: string) => (r === 'POSITIVO' ? '▲' : r === 'NEGATIVO' ? '▼' : '◆')
 
   const resultadoColor = (r: string) =>
-    r === "POSITIVO" ? t.green : r === "NEGATIVO" ? t.red : t.dim;
+    r === 'POSITIVO' ? t.green : r === 'NEGATIVO' ? t.red : t.dim
 
   return (
-    <div
-      style={{ padding: 28, display: "flex", flexDirection: "column", gap: 20 }}
-    >
+    <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Encabezado decisión */}
       <div
         style={{
           border: `2px solid ${decisionColor}`,
           padding: 20,
           background: `rgba(${
-            reporte.decision === "ACEPTADO"
-              ? "16,185,129"
-              : reporte.decision === "RECHAZADO"
-                ? "239,68,68"
-                : "250,204,21"
+            reporte.decision === 'ACEPTADO'
+              ? '16,185,129'
+              : reporte.decision === 'RECHAZADO'
+                ? '239,68,68'
+                : '250,204,21'
           },0.06)`,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}
       >
         <div>
@@ -552,7 +526,7 @@ function ReporteAnalisis({
             style={{
               fontFamily: t.mono,
               fontSize: 12,
-              color: "#94a3b8",
+              color: '#94a3b8',
               marginTop: 6,
               maxWidth: 380,
               lineHeight: 1.5,
@@ -561,7 +535,7 @@ function ReporteAnalisis({
             {reporte.resumen}
           </div>
         </div>
-        <div style={{ textAlign: "right" }}>
+        <div style={{ textAlign: 'right' }}>
           <div
             style={{
               fontFamily: t.mono,
@@ -583,21 +557,17 @@ function ReporteAnalisis({
           >
             {reporte.puntuacion}
           </div>
-          <div style={{ fontFamily: t.mono, fontSize: 10, color: t.dim }}>
-            /100
-          </div>
+          <div style={{ fontFamily: t.mono, fontSize: 10, color: t.dim }}>/100</div>
         </div>
       </div>
 
       {/* Métricas rápidas */}
-      <div
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}
-      >
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
         <div
           style={{
             border: `1px solid ${t.border}`,
-            padding: "10px 14px",
-            background: "rgba(15,23,42,0.6)",
+            padding: '10px 14px',
+            background: 'rgba(15,23,42,0.6)',
           }}
         >
           <div
@@ -625,8 +595,8 @@ function ReporteAnalisis({
         <div
           style={{
             border: `1px solid ${t.border}`,
-            padding: "10px 14px",
-            background: "rgba(15,23,42,0.6)",
+            padding: '10px 14px',
+            background: 'rgba(15,23,42,0.6)',
           }}
         >
           <div
@@ -654,8 +624,8 @@ function ReporteAnalisis({
         <div
           style={{
             border: `1px solid ${t.border}`,
-            padding: "10px 14px",
-            background: "rgba(15,23,42,0.6)",
+            padding: '10px 14px',
+            background: 'rgba(15,23,42,0.6)',
           }}
         >
           <div
@@ -695,17 +665,17 @@ function ReporteAnalisis({
         >
           CRITERIOS DE EVALUACIÓN
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {reporte.criterios.map((c, i) => (
             <div
               key={i}
               style={{
                 border: `1px solid ${t.border}`,
-                padding: "10px 14px",
-                background: "rgba(15,23,42,0.5)",
-                display: "flex",
+                padding: '10px 14px',
+                background: 'rgba(15,23,42,0.5)',
+                display: 'flex',
                 gap: 12,
-                alignItems: "flex-start",
+                alignItems: 'flex-start',
               }}
             >
               <span
@@ -722,9 +692,9 @@ function ReporteAnalisis({
               <div style={{ flex: 1 }}>
                 <div
                   style={{
-                    display: "flex",
+                    display: 'flex',
                     gap: 8,
-                    alignItems: "center",
+                    alignItems: 'center',
                     marginBottom: 3,
                   }}
                 >
@@ -744,7 +714,7 @@ function ReporteAnalisis({
                       fontSize: 10,
                       color: pesoColor(c.peso),
                       border: `1px solid ${pesoColor(c.peso)}`,
-                      padding: "1px 6px",
+                      padding: '1px 6px',
                       opacity: 0.8,
                     }}
                   >
@@ -754,8 +724,8 @@ function ReporteAnalisis({
                     style={{
                       fontFamily: t.mono,
                       fontSize: 11,
-                      color: "#64748b",
-                      marginLeft: "auto",
+                      color: '#64748b',
+                      marginLeft: 'auto',
                     }}
                   >
                     {c.valor}
@@ -765,7 +735,7 @@ function ReporteAnalisis({
                   style={{
                     fontFamily: t.mono,
                     fontSize: 11,
-                    color: "#64748b",
+                    color: '#64748b',
                     lineHeight: 1.5,
                   }}
                 >
@@ -782,8 +752,8 @@ function ReporteAnalisis({
         <div
           style={{
             border: `1px solid rgba(250,204,21,0.3)`,
-            background: "rgba(250,204,21,0.04)",
-            padding: "12px 16px",
+            background: 'rgba(250,204,21,0.04)',
+            padding: '12px 16px',
           }}
         >
           <div
@@ -803,7 +773,7 @@ function ReporteAnalisis({
               style={{
                 fontFamily: t.mono,
                 fontSize: 11,
-                color: "#94a3b8",
+                color: '#94a3b8',
                 paddingLeft: 12,
                 borderLeft: `2px solid ${t.yellow}`,
                 marginBottom: 4,
@@ -821,39 +791,38 @@ function ReporteAnalisis({
         style={{
           fontFamily: t.mono,
           fontSize: 10,
-          color: "#334155",
-          textAlign: "center",
+          color: '#334155',
+          textAlign: 'center',
           lineHeight: 1.6,
         }}
       >
         Este análisis fue generado por IA con base en los datos proporcionados.
         <br />
-        El administrador tiene la decisión final de aceptar o rechazar el
-        ingreso.
+        El administrador tiene la decisión final de aceptar o rechazar el ingreso.
       </div>
 
       {/* Acciones */}
-      <div style={{ display: "flex", gap: 10, paddingTop: 4 }}>
+      <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
         <button onClick={onEditar} style={btn(t.dim)} disabled={guardando}>
           ← EDITAR DATOS
         </button>
         <button
           onClick={onRechazar}
-          style={{ ...btn(t.red, "rgba(239,68,68,0.1)"), flex: 1 }}
+          style={{ ...btn(t.red, 'rgba(239,68,68,0.1)'), flex: 1 }}
           disabled={guardando}
         >
           ✕ RECHAZAR INGRESO
         </button>
         <button
           onClick={onAceptar}
-          style={{ ...btn(t.green, "rgba(16,185,129,0.15)"), flex: 2 }}
+          style={{ ...btn(t.green, 'rgba(16,185,129,0.15)'), flex: 2 }}
           disabled={guardando}
         >
-          {guardando ? "REGISTRANDO..." : "✓ CONFIRMAR INGRESO AL CAMPAMENTO"}
+          {guardando ? 'REGISTRANDO...' : '✓ CONFIRMAR INGRESO AL CAMPAMENTO'}
         </button>
       </div>
     </div>
-  );
+  )
 }
 
 // ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
@@ -861,92 +830,87 @@ export default function ModalAgregarPersonaIA({
   onClose,
   onSuccess,
 }: {
-  onClose: () => void;
-  onSuccess: () => void;
+  onClose: () => void
+  onSuccess: () => void
 }) {
-  const [paso, setPaso] = useState<
-    "formulario" | "analizando" | "reporte" | "rechazado"
-  >("formulario");
+  const [paso, setPaso] = useState<'formulario' | 'analizando' | 'reporte' | 'rechazado'>(
+    'formulario'
+  )
   const [form, setForm] = useState<FormPersona>({
-    nombre: "",
-    apellidos: "",
-    fecha_nacimiento: "",
+    nombre: '',
+    apellidos: '',
+    fecha_nacimiento: '',
     habilidades_combate: 5,
     nivel_confianza: 5,
-    estado_salud: "SANO",
-  });
-  const [reporte, setReporte] = useState<ReporteIA | null>(null);
-  const [error, setError]     = useState("");
-  const [guardando, setGuardando] = useState(false);
+    estado_salud: 'SANO',
+  })
+  const [reporte, setReporte] = useState<ReporteIA | null>(null)
+  const [error, setError] = useState('')
+  const [guardando, setGuardando] = useState(false)
 
   // ── Estado de archivos (nuevo) ──
-  const [foto,    setFoto]    = useState<File | null>(null);
-  const [tarjeta, setTarjeta] = useState<File | null>(null);
+  const [foto, setFoto] = useState<File | null>(null)
+  const [tarjeta, setTarjeta] = useState<File | null>(null)
 
   // ── Llamar al backend para análisis IA ──
   const analizarConIA = async () => {
-    setError("");
+    setError('')
 
     if (form.habilidades_combate < 0 || form.habilidades_combate > 10) {
-      setError("Habilidades de combate debe estar entre 0 y 10");
-      return;
+      setError('Habilidades de combate debe estar entre 0 y 10')
+      return
     }
     if (form.nivel_confianza < 0 || form.nivel_confianza > 10) {
-      setError("Nivel de confianza debe estar entre 0 y 10");
-      return;
+      setError('Nivel de confianza debe estar entre 0 y 10')
+      return
     }
-    const edad =
-      new Date().getFullYear() - new Date(form.fecha_nacimiento).getFullYear();
+    const edad = new Date().getFullYear() - new Date(form.fecha_nacimiento).getFullYear()
     if (edad < 5 || edad > 100) {
-      setError("Fecha de nacimiento no válida");
-      return;
+      setError('Fecha de nacimiento no válida')
+      return
     }
 
-    setPaso("analizando");
+    setPaso('analizando')
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/v1/ia/analizar-ingreso", {
-        method: "POST",
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/v1/ia/analizar-ingreso', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(form),
-      });
+      })
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error ?? "Error del servidor");
+        const err = await response.json()
+        throw new Error(err.error ?? 'Error del servidor')
       }
 
-      const reporte: ReporteIA = await response.json();
-      setReporte(reporte);
-      setPaso("reporte");
+      const reporte: ReporteIA = await response.json()
+      setReporte(reporte)
+      setPaso('reporte')
     } catch (err) {
-      console.error(err);
+      console.error(err)
       setError(
-        err instanceof Error
-          ? err.message
-          : "Error al conectar con la IA. Intente de nuevo.",
-      );
-      setPaso("formulario");
+        err instanceof Error ? err.message : 'Error al conectar con la IA. Intente de nuevo.'
+      )
+      setPaso('formulario')
     }
-  };
+  }
 
   // ── Confirmar ingreso ──
   const confirmarIngreso = async () => {
-    if (!reporte) return;
+    if (!reporte) return
     try {
-      setGuardando(true);
+      setGuardando(true)
 
       // 1. Registrar la persona — ahora incluye foto y tarjeta
-      const nuevaPersona = await addPersona({ ...form, foto, tarjeta });
+      const nuevaPersona = await addPersona({ ...form, foto, tarjeta })
 
       // 2. Calcular edad
-      const edad =
-        new Date().getFullYear() -
-        new Date(form.fecha_nacimiento).getFullYear();
+      const edad = new Date().getFullYear() - new Date(form.fecha_nacimiento).getFullYear()
 
       // 3. IA asigna cargo automáticamente
       const asignacion = await asignarCargoIA({
@@ -956,17 +920,17 @@ export default function ModalAgregarPersonaIA({
         nivel_confianza: form.nivel_confianza,
         estado_salud: form.estado_salud,
         edad,
-      });
+      })
 
       // Actualizar el cargo_sugerido en pantalla con el real
-      reporte.cargo_sugerido = asignacion.cargo_nombre;
+      reporte.cargo_sugerido = asignacion.cargo_nombre
 
       // 4. Registrar la asignación de cargo en el backend
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token')
       await fetch(`/api/v1/personas/${nuevaPersona.id}/cargo-ia`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
@@ -974,21 +938,21 @@ export default function ModalAgregarPersonaIA({
           razon: asignacion.razon,
           reglas_aplicadas: asignacion.reglas_aplicadas,
         }),
-      });
+      })
 
-      onSuccess();
-      onClose();
+      onSuccess()
+      onClose()
     } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
+      if (err instanceof Error) setError(err.message)
     } finally {
-      setGuardando(false);
+      setGuardando(false)
     }
-  };
+  }
 
   // ── Rechazar manualmente ──
   const rechazarIngreso = () => {
-    setPaso("rechazado");
-  };
+    setPaso('rechazado')
+  }
 
   return (
     <div style={overlay} onClick={onClose}>
@@ -996,12 +960,12 @@ export default function ModalAgregarPersonaIA({
         {/* Header */}
         <div
           style={{
-            padding: "16px 24px",
+            padding: '16px 24px',
             borderBottom: `1px solid ${t.border}`,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            background: "rgba(15,23,42,0.9)",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: 'rgba(15,23,42,0.9)',
           }}
         >
           <div>
@@ -1010,43 +974,36 @@ export default function ModalAgregarPersonaIA({
                 fontFamily: t.mono,
                 fontSize: 14,
                 letterSpacing: 3,
-                color: "#e2e8f0",
+                color: '#e2e8f0',
               }}
             >
               INGRESO DE SUPERVIVIENTE
             </span>
-            <div style={{ display: "flex", gap: 12, marginTop: 6 }}>
-              {["formulario", "analizando", "reporte"].map((p, i) => (
-                <div
-                  key={p}
-                  style={{ display: "flex", alignItems: "center", gap: 6 }}
-                >
+            <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+              {['formulario', 'analizando', 'reporte'].map((p, i) => (
+                <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <div
                     style={{
                       width: 16,
                       height: 16,
-                      borderRadius: "50%",
+                      borderRadius: '50%',
                       border: `1px solid`,
                       borderColor:
-                        paso === p ||
-                        (paso === "rechazado" && p === "reporte")
+                        paso === p || (paso === 'rechazado' && p === 'reporte')
                           ? t.green
-                          : ["formulario", "analizando", "reporte"].indexOf(
-                                paso,
-                              ) > i
+                          : ['formulario', 'analizando', 'reporte'].indexOf(paso) > i
                             ? t.green
                             : t.border,
-                      background: paso === p ? t.green : "transparent",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      background: paso === p ? t.green : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    {["formulario", "analizando", "reporte"].indexOf(paso) >
-                      i && (
+                    {['formulario', 'analizando', 'reporte'].indexOf(paso) > i && (
                       <span
                         style={{
-                          color: "#0f172a",
+                          color: '#0f172a',
                           fontSize: 8,
                           fontWeight: 900,
                         }}
@@ -1060,15 +1017,13 @@ export default function ModalAgregarPersonaIA({
                       fontFamily: t.mono,
                       fontSize: 9,
                       letterSpacing: 1,
-                      textTransform: "uppercase",
+                      textTransform: 'uppercase',
                       color: paso === p ? t.green : t.dim,
                     }}
                   >
-                    {p === "analizando" ? "análisis IA" : p}
+                    {p === 'analizando' ? 'análisis IA' : p}
                   </span>
-                  {i < 2 && (
-                    <span style={{ color: t.border, fontSize: 10 }}>—</span>
-                  )}
+                  {i < 2 && <span style={{ color: t.border, fontSize: 10 }}>—</span>}
                 </div>
               ))}
             </div>
@@ -1076,10 +1031,10 @@ export default function ModalAgregarPersonaIA({
           <button
             onClick={onClose}
             style={{
-              background: "none",
-              border: "none",
+              background: 'none',
+              border: 'none',
               color: t.dim,
-              cursor: "pointer",
+              cursor: 'pointer',
               fontSize: 18,
               lineHeight: 1,
             }}
@@ -1092,26 +1047,26 @@ export default function ModalAgregarPersonaIA({
         {error && (
           <div
             style={{
-              margin: "12px 24px 0",
-              padding: "10px 14px",
+              margin: '12px 24px 0',
+              padding: '10px 14px',
               border: `1px solid ${t.red}`,
-              background: "rgba(239,68,68,0.08)",
+              background: 'rgba(239,68,68,0.08)',
               fontFamily: t.mono,
               fontSize: 12,
               color: t.red,
-              display: "flex",
+              display: 'flex',
               gap: 8,
             }}
           >
             ⚠ {error}
             <button
-              onClick={() => setError("")}
+              onClick={() => setError('')}
               style={{
-                marginLeft: "auto",
-                background: "none",
-                border: "none",
+                marginLeft: 'auto',
+                background: 'none',
+                border: 'none',
                 color: t.red,
-                cursor: "pointer",
+                cursor: 'pointer',
               }}
             >
               ✕
@@ -1120,7 +1075,7 @@ export default function ModalAgregarPersonaIA({
         )}
 
         {/* Paso: Formulario */}
-        {paso === "formulario" && (
+        {paso === 'formulario' && (
           <FormularioIngreso
             form={form}
             setForm={setForm}
@@ -1134,42 +1089,42 @@ export default function ModalAgregarPersonaIA({
         )}
 
         {/* Paso: Analizando */}
-        {paso === "analizando" && (
+        {paso === 'analizando' && (
           <div
             style={{
               padding: 60,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
               gap: 20,
             }}
           >
-            <div style={{ position: "relative", width: 80, height: 80 }}>
+            <div style={{ position: 'relative', width: 80, height: 80 }}>
               <div
                 style={{
-                  position: "absolute",
+                  position: 'absolute',
                   inset: 0,
-                  borderRadius: "50%",
+                  borderRadius: '50%',
                   border: `2px solid rgba(16,185,129,0.2)`,
                 }}
               />
               <div
                 style={{
-                  position: "absolute",
+                  position: 'absolute',
                   inset: 0,
-                  borderRadius: "50%",
+                  borderRadius: '50%',
                   border: `2px solid transparent`,
                   borderTopColor: t.green,
-                  animation: "spin 1s linear infinite",
+                  animation: 'spin 1s linear infinite',
                 }}
               />
               <div
                 style={{
-                  position: "absolute",
-                  inset: "30%",
-                  borderRadius: "50%",
+                  position: 'absolute',
+                  inset: '30%',
+                  borderRadius: '50%',
                   background: t.green,
-                  animation: "pulse 1.5s ease-in-out infinite",
+                  animation: 'pulse 1.5s ease-in-out infinite',
                 }}
               />
             </div>
@@ -1188,7 +1143,7 @@ export default function ModalAgregarPersonaIA({
                 fontFamily: t.mono,
                 fontSize: 11,
                 color: t.dim,
-                textAlign: "center",
+                textAlign: 'center',
                 lineHeight: 1.8,
               }}
             >
@@ -1207,32 +1162,30 @@ export default function ModalAgregarPersonaIA({
         )}
 
         {/* Paso: Reporte */}
-        {paso === "reporte" && reporte && (
+        {paso === 'reporte' && reporte && (
           <ReporteAnalisis
             reporte={reporte}
             form={form}
             onAceptar={confirmarIngreso}
             onRechazar={rechazarIngreso}
-            onEditar={() => setPaso("formulario")}
+            onEditar={() => setPaso('formulario')}
             guardando={guardando}
           />
         )}
 
         {/* Paso: Rechazado manualmente */}
-        {paso === "rechazado" && (
+        {paso === 'rechazado' && (
           <div
             style={{
               padding: 48,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
               gap: 16,
-              textAlign: "center",
+              textAlign: 'center',
             }}
           >
-            <div style={{ fontFamily: t.mono, fontSize: 48, color: t.red }}>
-              ✕
-            </div>
+            <div style={{ fontFamily: t.mono, fontSize: 48, color: t.red }}>✕</div>
             <div
               style={{
                 fontFamily: t.mono,
@@ -1252,10 +1205,10 @@ export default function ModalAgregarPersonaIA({
                 lineHeight: 1.7,
               }}
             >
-              El administrador ha decidido no permitir el ingreso de{" "}
+              El administrador ha decidido no permitir el ingreso de{' '}
               <span style={{ color: t.text }}>
                 {form.nombre} {form.apellidos}
-              </span>{" "}
+              </span>{' '}
               al campamento. Esta decisión ha sido registrada.
             </div>
             <button onClick={onClose} style={{ ...btn(t.dim), marginTop: 12 }}>
@@ -1265,5 +1218,5 @@ export default function ModalAgregarPersonaIA({
         )}
       </div>
     </div>
-  );
+  )
 }
