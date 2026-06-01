@@ -1,0 +1,84 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 10
+      arrivalRate: 5
+      name: "Calentamiento"
+    - duration: 20
+      arrivalRate: 20
+      name: "Carga normal"
+    - duration: 10
+      arrivalRate: 50
+      name: "Pico de estrés"
+  ensure:
+    p95: 2000
+    p99: 5000
+    maxErrorRate: 5
+  variables:
+    emailAdmin: "admin@base-alfa.com"
+    passwordAdmin: "password"
+    emailGestor: "gestor@base-alfa.com"
+    passwordGestor: "password"
+
+scenarios:
+  - name: "Login y consulta personas"
+    weight: 40
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "{{ emailAdmin }}"
+            password: "{{ passwordAdmin }}"
+          capture:
+            - json: "$.token"
+              as: "token"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "/api/v1/personas"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200
+
+  - name: "Login y consulta bodega"
+    weight: 30
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "{{ emailGestor }}"
+            password: "{{ passwordGestor }}"
+          capture:
+            - json: "$.token"
+              as: "token"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "/api/v1/recursos"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200
+
+  - name: "Solo login repetido"
+    weight: 20
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "{{ emailAdmin }}"
+            password: "{{ passwordAdmin }}"
+          expect:
+            - statusCode: 200
+
+  - name: "Login con credenciales incorrectas"
+    weight: 10
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "noexiste@correo.com"
+            password: "passwordmalo"
+          expect:
+            - statusCode: 401
