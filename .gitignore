@@ -22,4 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-*.env
+
+# Variables de entorno
+.env
+.env.production
+.env.local
+
+# Imágenes subidas por usuarios
+public/uploads/

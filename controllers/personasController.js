@@ -10,6 +10,8 @@ export const getPersonas = async (req, res) => {
         p.id,
         p.nombre,
         p.apellidos,
+        p.habilidades_combate,
+        p.nivel_confianza,
         p.estado_salud,
         p.esta_en_campamento,
         p.fecha_ingreso,
@@ -34,29 +36,35 @@ export const addPersona = async (req, res) => {
   try {
     const campamento_id = req.user.campamento;
     const {
-      nombre,
-      apellidos,
-      fecha_nacimiento,
-      habilidades_combate,
-      nivel_confianza,
-      estado_salud,
+      nombre, apellidos, fecha_nacimiento,
+      habilidades_combate, nivel_confianza, estado_salud,
     } = req.body;
+
+    const foto_url = req.files?.foto?.[0]
+      ? `/uploads/personas/${req.files.foto[0].filename}`
+      : null;
+    const tarjeta_url = req.files?.tarjeta?.[0]
+      ? `/uploads/personas/${req.files.tarjeta[0].filename}`
+      : null;
 
     const { rows } = await pool.query(
       `INSERT INTO persona
-        (nombre, apellidos, fecha_nacimiento, habilidades_combate, nivel_confianza, estado_salud, esta_en_campamento, fecha_ingreso, campamento_id)
-       VALUES ($1, $2, $3, $4, $5, $6, TRUE, NOW(), $7)
+        (nombre, apellidos, fecha_nacimiento, foto_url, tarjeta_id_url,
+         habilidades_combate, nivel_confianza, estado_salud,
+         esta_en_campamento, fecha_ingreso, campamento_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, NOW(), $9)
        RETURNING id`,
-      [nombre, apellidos, fecha_nacimiento, habilidades_combate, nivel_confianza, estado_salud, campamento_id]
+      [nombre, apellidos, fecha_nacimiento, foto_url, tarjeta_url,
+       habilidades_combate, nivel_confianza, estado_salud, campamento_id]
     );
 
     await registrarLog({
       usuario_id: req.user.id,
-      campamento_id: campamento_id,
+      campamento_id,
       accion: "INGRESO_PERSONA",
       entidad_afectada: "persona",
       entidad_id: rows[0].id,
-      detalle: { nombre, apellidos, estado_salud },
+      detalle: { nombre, apellidos, estado_salud, foto_url, tarjeta_url },
       ip_origen: req.ip,
     });
 
@@ -66,6 +74,36 @@ export const addPersona = async (req, res) => {
     res.status(500).json({ error: "Error servidor" });
   }
 };
+
+export const asignarCargoIA = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { cargo_id, razon, reglas_aplicadas } = req.body
+    const campamento_id = req.user.campamento
+
+    await pool.query(
+      `INSERT INTO asignacioncargo
+        (persona_id, cargo_id, campamento_id, es_temporal, asignado_por_ia, motivo)
+       VALUES ($1, $2, $3, FALSE, TRUE, $4)`,
+      [id, cargo_id, campamento_id, `${razon} | Reglas: ${reglas_aplicadas?.join(", ")}`]
+    )
+
+    await registrarLog({
+      usuario_id: req.user.id,
+      campamento_id,
+      accion: "ASIGNACION_CARGO_IA",
+      entidad_afectada: "asignacioncargo",
+      entidad_id: id,
+      detalle: { cargo_id, razon },
+      ip_origen: req.ip,
+    })
+
+    res.status(201).json({ mensaje: "Cargo asignado correctamente" })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ error: "Error servidor" })
+  }
+}
 
 export const updateEstadoPersona = async (req, res) => {
   try {
