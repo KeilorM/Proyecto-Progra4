@@ -261,17 +261,13 @@ export const procesarConsumoDiario = async (req, res) => {
       [bodega_id]
     );
 
-<<<<<<< HEAD
-   // solucionar antes en la bd, para que actualice los datos de la bodega
-=======
-    if (tipoComida.length > 0 && comidaProducida > 0) {
+if (tipoComida.length > 0 && comidaProducida > 0) {
       await pool.query(
         `UPDATE itembodega SET cantidad_actual = cantidad_actual + $1
         WHERE bodega_id = $2 AND tipo_recurso_id = $3`,
         [comidaProducida, bodega_id, tipoComida[0].tipo_recurso_id]
       );
     }
->>>>>>> main
 
     if (tipoAgua.length > 0 && aguaProducida > 0) {
       await pool.query(
