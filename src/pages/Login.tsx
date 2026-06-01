@@ -1,11 +1,11 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { login } from "../services/api"
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { login } from '../services/api'
 
 export default function Login() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const navigate = useNavigate()
@@ -14,42 +14,42 @@ export default function Login() {
     e.preventDefault()
 
     if (!email || !password) {
-      setError("Debes llenar ambos campos")
+      setError('Debes llenar ambos campos')
       return
     }
 
     setLoading(true)
-    setError("")
+    setError('')
 
     try {
       const data = await login(email, password)
 
       // Guardar token y rol para uso en toda la app
-      localStorage.setItem("token", data.token)
-      localStorage.setItem("rol", data.rol)
-      localStorage.setItem("campamento", String(data.campamento))
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('rol', data.rol)
+      localStorage.setItem('campamento', String(data.campamento))
 
       switch (data.rol) {
-        case "ADMIN":
-          navigate("/admin")
+        case 'ADMIN':
+          navigate('/admin')
           break
-        case "TRABAJADOR":
-          navigate("/trabajador")
+        case 'TRABAJADOR':
+          navigate('/trabajador')
           break
-        case "GESTOR_RECURSOS":
-          navigate("/bodega")
+        case 'GESTOR_RECURSOS':
+          navigate('/bodega')
           break
-        case "ENCARGADO_VIAJES":
-          navigate("/exploraciones")
+        case 'ENCARGADO_VIAJES':
+          navigate('/exploraciones')
           break
         default:
-          setError("Rol no reconocido")
+          setError('Rol no reconocido')
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message)
       } else {
-        setError("Error desconocido")
+        setError('Error desconocido')
       }
     } finally {
       setLoading(false)
@@ -59,7 +59,6 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 text-white">
       <div className="bg-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-slate-700">
-
         <h2 className="text-2xl font-bold mb-6 text-center">Panel de Control</h2>
 
         {error && (
@@ -74,7 +73,7 @@ export default function Login() {
             placeholder="Correo"
             className="w-full p-4 rounded-2xl bg-slate-900 mb-4 outline-none border-2 border-transparent focus:border-orange-500"
             value={email}
-            onChange={e => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
           />
 
           <input
@@ -82,7 +81,7 @@ export default function Login() {
             placeholder="Contraseña"
             className="w-full p-4 rounded-2xl bg-slate-900 mb-6 outline-none border-2 border-transparent focus:border-orange-500"
             value={password}
-            onChange={e => setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
           />
 
           <button
@@ -90,10 +89,9 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-orange-600 p-4 rounded-xl font-bold hover:bg-orange-500 transition-all disabled:opacity-50"
           >
-            {loading ? "Verificando..." : "ENTRAR"}
+            {loading ? 'Verificando...' : 'ENTRAR'}
           </button>
         </form>
-
       </div>
     </div>
   )

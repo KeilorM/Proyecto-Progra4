@@ -1,0 +1,5 @@
+dist
+node_modules
+public
+*.sql
+package-lock.json

@@ -1,46 +1,43 @@
-import pool from "../db/connection.js";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { registrarLog } from "../middleware/logger.js";
+import pool from '../db/connection.js'
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
+import { registrarLog } from '../middleware/logger.js'
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body
   try {
-    const { rows } = await pool.query(
-      "SELECT * FROM usuario WHERE email = $1",
-      [email]
-    );
+    const { rows } = await pool.query('SELECT * FROM usuario WHERE email = $1', [email])
 
     if (rows.length === 0) {
-      return res.status(401).json({ error: "Usuario no encontrado" });
+      return res.status(401).json({ error: 'Usuario no encontrado' })
     }
 
-    const user = rows[0];
-    const match = await bcrypt.compare(password, user.password_hash);
+    const user = rows[0]
+    const match = await bcrypt.compare(password, user.password_hash)
 
     if (!match) {
-      return res.status(401).json({ error: "Contraseña incorrecta" });
+      return res.status(401).json({ error: 'Contraseña incorrecta' })
     }
 
     const token = jwt.sign(
       { id: user.id, rol: user.rol_sistema, campamento: user.campamento_id },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES }
-    );
+    )
 
     await registrarLog({
       usuario_id: user.id,
       campamento_id: user.campamento_id,
-      accion: "LOGIN",
-      entidad_afectada: "usuario",
+      accion: 'LOGIN',
+      entidad_afectada: 'usuario',
       entidad_id: user.id,
-      detalle: { resultado: "exitoso" },
+      detalle: { resultado: 'exitoso' },
       ip_origen: req.ip,
-    });
+    })
 
-    res.json({ token, id: user.id, rol: user.rol_sistema, campamento: user.campamento_id });
+    res.json({ token, id: user.id, rol: user.rol_sistema, campamento: user.campamento_id })
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error servidor" });
+    console.error(error)
+    res.status(500).json({ error: 'Error servidor' })
   }
-};
+}
