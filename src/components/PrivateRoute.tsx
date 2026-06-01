@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom"
+import { Navigate } from 'react-router-dom'
 
 interface Props {
   children: React.ReactNode
@@ -6,8 +6,8 @@ interface Props {
 }
 
 export default function PrivateRoute({ children, rolesPermitidos }: Props) {
-  const token = localStorage.getItem("token")
-  const rol = localStorage.getItem("rol")
+  const token = localStorage.getItem('token')
+  const rol = localStorage.getItem('rol')
 
   // Si no hay token, mandar al login
   if (!token || !rol) {

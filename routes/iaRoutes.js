@@ -1,11 +1,11 @@
-import express from "express";
-import { verifyToken, verifyRol } from "../middleware/auth.js";
-import { analizarIngreso, asignarCargo } from "../controllers/iaController.js";
+import express from 'express'
+import { verifyToken, verifyRol } from '../middleware/auth.js'
+import { analizarIngreso, asignarCargo } from '../controllers/iaController.js'
 
-const router = express.Router();
+const router = express.Router()
 
-router.post("/analizar-ingreso", verifyToken, verifyRol("ADMIN"), analizarIngreso);
-router.post("/analizar-ingreso", verifyToken, verifyRol("ADMIN"), analizarIngreso);
-router.post("/asignar-cargo",    verifyToken, verifyRol("ADMIN"), asignarCargo);
+router.post('/analizar-ingreso', verifyToken, verifyRol('ADMIN'), analizarIngreso)
+router.post('/analizar-ingreso', verifyToken, verifyRol('ADMIN'), analizarIngreso)
+router.post('/asignar-cargo', verifyToken, verifyRol('ADMIN'), asignarCargo)
 
-export default router;
+export default router

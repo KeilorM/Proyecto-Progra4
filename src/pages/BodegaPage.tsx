@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react"
-import { getBodega, getAlertas, getMovimientos, registrarMovimiento } from "../services/api"
-import PageHeader from "../components/PageHeader"
-import { sharedStyles, theme } from "../styles/theme"
-import { useInactivityTimer } from "../hooks/useInactivityTimer"
-import { useIsMobile } from "../hooks/useIsMobile"
+import { useEffect, useState } from 'react'
+import { getBodega, getAlertas, getMovimientos, registrarMovimiento } from '../services/api'
+import PageHeader from '../components/PageHeader'
+import { sharedStyles, theme } from '../styles/theme'
+import { useInactivityTimer } from '../hooks/useInactivityTimer'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 // ─── TIPOS ───────────────────────────────────────────────────────────────────
 interface ItemBodega {
@@ -31,33 +31,42 @@ interface Movimiento {
   id: number
   recurso: string
   cantidad: number
-  tipo_movimiento: "ENTRADA" | "SALIDA"
+  tipo_movimiento: 'ENTRADA' | 'SALIDA'
   origen: string
   nota: string
   fecha: string
   registrado_por: string
 }
 
-const ORIGENES = ["CONSUMO_DIARIO", "PRODUCCION", "EXPLORACION", "TRASLADO_ENVIADO", "TRASLADO_RECIBIDO"]
+const ORIGENES = [
+  'CONSUMO_DIARIO',
+  'PRODUCCION',
+  'EXPLORACION',
+  'TRASLADO_ENVIADO',
+  'TRASLADO_RECIBIDO',
+]
 
 // ─── MODAL MOVIMIENTO ─────────────────────────────────────────────────────────
-function ModalMovimiento({ items, onClose, onSuccess }: {
+function ModalMovimiento({
+  items,
+  onClose,
+  onSuccess,
+}: {
   items: ItemBodega[]
   onClose: () => void
   onSuccess: () => void
 }) {
   const [saving, setSaving] = useState(false)
-  const [error, setError]   = useState("")
-  const [form, setForm]     = useState({
+  const [error, setError] = useState('')
+  const [form, setForm] = useState({
     tipo_recurso_id: items[0]?.id ?? 0,
     cantidad: 1,
-    tipo_movimiento: "ENTRADA" as "ENTRADA" | "SALIDA",
-    origen: "PRODUCCION",
-    nota: "",
+    tipo_movimiento: 'ENTRADA' as 'ENTRADA' | 'SALIDA',
+    origen: 'PRODUCCION',
+    nota: '',
   })
 
-  const set = (field: string, value: string | number) =>
-    setForm(f => ({ ...f, [field]: value }))
+  const set = (field: string, value: string | number) => setForm((f) => ({ ...f, [field]: value }))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -75,53 +84,90 @@ function ModalMovimiento({ items, onClose, onSuccess }: {
 
   return (
     <div style={sharedStyles.modalOverlay} onClick={onClose}>
-      <div style={{ ...sharedStyles.modal, width: "min(480px, 95vw)" }} onClick={e => e.stopPropagation()}>
+      <div
+        style={{ ...sharedStyles.modal, width: 'min(480px, 95vw)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div style={sharedStyles.modalHeader}>
           <span style={sharedStyles.modalTitle}>REGISTRAR MOVIMIENTO</span>
-          <button style={sharedStyles.modalClose} onClick={onClose}>✕</button>
+          <button style={sharedStyles.modalClose} onClick={onClose}>
+            ✕
+          </button>
         </div>
-        {error && <div style={{ ...sharedStyles.errorBanner, margin: "16px 24px 0" }}>⚠ {error}</div>}
-        <form onSubmit={handleSubmit} style={{ padding: 24, display: "flex", flexDirection: "column", gap: 14 }}>
+        {error && (
+          <div style={{ ...sharedStyles.errorBanner, margin: '16px 24px 0' }}>⚠ {error}</div>
+        )}
+        <form
+          onSubmit={handleSubmit}
+          style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}
+        >
           <div>
             <label style={sharedStyles.label}>RECURSO</label>
-            <select style={{ ...sharedStyles.input, marginTop: 4 }}
+            <select
+              style={{ ...sharedStyles.input, marginTop: 4 }}
               value={form.tipo_recurso_id}
-              onChange={e => set("tipo_recurso_id", Number(e.target.value))}>
-              {items.map(i => <option key={i.id} value={i.id}>{i.recurso} ({i.unidad})</option>)}
+              onChange={(e) => set('tipo_recurso_id', Number(e.target.value))}
+            >
+              {items.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.recurso} ({i.unidad})
+                </option>
+              ))}
             </select>
           </div>
-          <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ display: 'flex', gap: 12 }}>
             <div style={{ flex: 1 }}>
               <label style={sharedStyles.label}>TIPO</label>
-              <select style={{ ...sharedStyles.input, marginTop: 4, color: form.tipo_movimiento === "ENTRADA" ? "#4ade80" : "#f87171" }}
+              <select
+                style={{
+                  ...sharedStyles.input,
+                  marginTop: 4,
+                  color: form.tipo_movimiento === 'ENTRADA' ? '#4ade80' : '#f87171',
+                }}
                 value={form.tipo_movimiento}
-                onChange={e => set("tipo_movimiento", e.target.value)}>
+                onChange={(e) => set('tipo_movimiento', e.target.value)}
+              >
                 <option value="ENTRADA">ENTRADA</option>
                 <option value="SALIDA">SALIDA</option>
               </select>
             </div>
             <div style={{ flex: 1 }}>
               <label style={sharedStyles.label}>CANTIDAD</label>
-              <input type="number" min={1} style={{ ...sharedStyles.input, marginTop: 4 }}
+              <input
+                type="number"
+                min={1}
+                style={{ ...sharedStyles.input, marginTop: 4 }}
                 value={form.cantidad}
-                onChange={e => set("cantidad", Number(e.target.value))} required />
+                onChange={(e) => set('cantidad', Number(e.target.value))}
+                required
+              />
             </div>
           </div>
           <div>
             <label style={sharedStyles.label}>ORIGEN</label>
-            <select style={{ ...sharedStyles.input, marginTop: 4 }}
+            <select
+              style={{ ...sharedStyles.input, marginTop: 4 }}
               value={form.origen}
-              onChange={e => set("origen", e.target.value)}>
-              {ORIGENES.map(o => <option key={o} value={o}>{o.replace(/_/g, " ")}</option>)}
+              onChange={(e) => set('origen', e.target.value)}
+            >
+              {ORIGENES.map((o) => (
+                <option key={o} value={o}>
+                  {o.replace(/_/g, ' ')}
+                </option>
+              ))}
             </select>
           </div>
           <div>
             <label style={sharedStyles.label}>NOTA (opcional)</label>
-            <input style={{ ...sharedStyles.input, marginTop: 4 }} placeholder="Descripción del movimiento"
-              value={form.nota} onChange={e => set("nota", e.target.value)} />
+            <input
+              style={{ ...sharedStyles.input, marginTop: 4 }}
+              placeholder="Descripción del movimiento"
+              value={form.nota}
+              onChange={(e) => set('nota', e.target.value)}
+            />
           </div>
           <button type="submit" style={sharedStyles.submitBtn} disabled={saving}>
-            {saving ? "PROCESANDO..." : "CONFIRMAR MOVIMIENTO"}
+            {saving ? 'PROCESANDO...' : 'CONFIRMAR MOVIMIENTO'}
           </button>
         </form>
       </div>
@@ -130,23 +176,23 @@ function ModalMovimiento({ items, onClose, onSuccess }: {
 }
 
 // ─── BODEGA PAGE ──────────────────────────────────────────────────────────────
-type Tab = "inventario" | "alertas" | "historial"
+type Tab = 'inventario' | 'alertas' | 'historial'
 
 export default function BodegaPage() {
   useInactivityTimer()
   const isMobile = useIsMobile()
-  const [items, setItems]             = useState<ItemBodega[]>([])
-  const [alertas, setAlertas]         = useState<Alerta[]>([])
+  const [items, setItems] = useState<ItemBodega[]>([])
+  const [alertas, setAlertas] = useState<Alerta[]>([])
   const [movimientos, setMovimientos] = useState<Movimiento[]>([])
-  const [loading, setLoading]         = useState(true)
-  const [error, setError]             = useState("")
-  const [tab, setTab]                 = useState<Tab>("inventario")
-  const [modalOpen, setModal]         = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [tab, setTab] = useState<Tab>('inventario')
+  const [modalOpen, setModal] = useState(false)
 
   const cargar = async () => {
     try {
       setLoading(true)
-      setError("")
+      setError('')
       const [bodega, als, movs] = await Promise.all([getBodega(), getAlertas(), getMovimientos()])
       setItems(bodega)
       setAlertas(als)
@@ -158,42 +204,86 @@ export default function BodegaPage() {
     }
   }
 
-  useEffect(() => { cargar() }, [])
+  useEffect(() => {
+    cargar()
+  }, [])
 
-  const totalVital   = items.filter(i => i.es_vital).reduce((s, i) => s + Number(i.cantidad_actual), 0)
-  const totalBajoMin = items.filter(i => i.bajo_minimo).length
+  const totalVital = items
+    .filter((i) => i.es_vital)
+    .reduce((s, i) => s + Number(i.cantidad_actual), 0)
+  const totalBajoMin = items.filter((i) => i.bajo_minimo).length
 
   return (
     <div style={sharedStyles.root}>
       <PageHeader titulo="ALMACÉN CENTRAL" subtitulo="Control de Recursos y Suministros" />
 
-      <main style={{ ...sharedStyles.main, padding: isMobile ? "16px 12px" : "24px 32px" }}>
-
+      <main style={{ ...sharedStyles.main, padding: isMobile ? '16px 12px' : '24px 32px' }}>
         {/* Stats */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(5, 1fr)",
-          gap: 10,
-          marginBottom: 24,
-        }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
+            gap: 10,
+            marginBottom: 24,
+          }}
+        >
           {[
-            { label: "Recursos",       value: items.length,                         color: theme.colors.green },
-            { label: "Vitales",        value: items.filter(i => i.es_vital).length, color: "#60a5fa" },
-            { label: "Bajo mínimo",    value: totalBajoMin,                         color: totalBajoMin > 0 ? "#f87171" : theme.colors.green },
-            { label: "Alertas activas",value: alertas.length,                       color: alertas.length > 0 ? "#facc15" : theme.colors.green },
-            { label: "Total vital",    value: totalVital,                           color: "#a78bfa" },
-          ].map(s => (
-            <div key={s.label} style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "12px 14px",
-              border: `1px solid ${s.color}`,
-              background: "rgba(15,23,42,0.8)",
-            }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: s.color, flexShrink: 0,
-                animation: "pulse 2s ease-in-out infinite" }} />
+            { label: 'Recursos', value: items.length, color: theme.colors.green },
+            { label: 'Vitales', value: items.filter((i) => i.es_vital).length, color: '#60a5fa' },
+            {
+              label: 'Bajo mínimo',
+              value: totalBajoMin,
+              color: totalBajoMin > 0 ? '#f87171' : theme.colors.green,
+            },
+            {
+              label: 'Alertas activas',
+              value: alertas.length,
+              color: alertas.length > 0 ? '#facc15' : theme.colors.green,
+            },
+            { label: 'Total vital', value: totalVital, color: '#a78bfa' },
+          ].map((s) => (
+            <div
+              key={s.label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '12px 14px',
+                border: `1px solid ${s.color}`,
+                background: 'rgba(15,23,42,0.8)',
+              }}
+            >
+              <div
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: s.color,
+                  flexShrink: 0,
+                  animation: 'pulse 2s ease-in-out infinite',
+                }}
+              />
               <div>
-                <div style={{ fontSize: isMobile ? 20 : 28, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.value}</div>
-                <div style={{ fontSize: 10, color: theme.colors.textDim, letterSpacing: 1, marginTop: 2 }}>{s.label}</div>
+                <div
+                  style={{
+                    fontSize: isMobile ? 20 : 28,
+                    fontWeight: 700,
+                    color: s.color,
+                    lineHeight: 1,
+                  }}
+                >
+                  {s.value}
+                </div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: theme.colors.textDim,
+                    letterSpacing: 1,
+                    marginTop: 2,
+                  }}
+                >
+                  {s.label}
+                </div>
               </div>
             </div>
           ))}
@@ -202,41 +292,73 @@ export default function BodegaPage() {
         {error && (
           <div style={sharedStyles.errorBanner}>
             ⚠ {error}
-            <button style={{ background: "none", border: "none", color: theme.colors.red, cursor: "pointer" }}
-              onClick={() => setError("")}>✕</button>
+            <button
+              style={{
+                background: 'none',
+                border: 'none',
+                color: theme.colors.red,
+                cursor: 'pointer',
+              }}
+              onClick={() => setError('')}
+            >
+              ✕
+            </button>
           </div>
         )}
 
         {/* Tabs */}
-        <div style={{ display: "flex", borderBottom: `1px solid ${theme.colors.border}`, flexWrap: "wrap" }}>
-          {(["inventario", "alertas", "historial"] as Tab[]).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{
-              fontFamily: theme.fonts.mono,
-              fontSize: isMobile ? 10 : 12,
-              letterSpacing: isMobile ? 1 : 2,
-              padding: isMobile ? "8px 12px" : "10px 24px",
-              background: tab === t ? "rgba(16,185,129,0.1)" : "transparent",
-              color: tab === t ? theme.colors.green : theme.colors.textDim,
-              border: "none",
-              borderBottom: tab === t ? `2px solid ${theme.colors.green}` : "2px solid transparent",
-              cursor: "pointer",
-              textTransform: "uppercase" as const,
-            }}>
+        <div
+          style={{
+            display: 'flex',
+            borderBottom: `1px solid ${theme.colors.border}`,
+            flexWrap: 'wrap',
+          }}
+        >
+          {(['inventario', 'alertas', 'historial'] as Tab[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                fontFamily: theme.fonts.mono,
+                fontSize: isMobile ? 10 : 12,
+                letterSpacing: isMobile ? 1 : 2,
+                padding: isMobile ? '8px 12px' : '10px 24px',
+                background: tab === t ? 'rgba(16,185,129,0.1)' : 'transparent',
+                color: tab === t ? theme.colors.green : theme.colors.textDim,
+                border: 'none',
+                borderBottom:
+                  tab === t ? `2px solid ${theme.colors.green}` : '2px solid transparent',
+                cursor: 'pointer',
+                textTransform: 'uppercase' as const,
+              }}
+            >
               {t}
-              {t === "alertas" && alertas.length > 0 && (
-                <span style={{ marginLeft: 6, background: "#f87171", color: "#fff", fontSize: 10, padding: "1px 5px", borderRadius: 8 }}>
+              {t === 'alertas' && alertas.length > 0 && (
+                <span
+                  style={{
+                    marginLeft: 6,
+                    background: '#f87171',
+                    color: '#fff',
+                    fontSize: 10,
+                    padding: '1px 5px',
+                    borderRadius: 8,
+                  }}
+                >
                   {alertas.length}
                 </span>
               )}
             </button>
           ))}
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center" }}>
-            <button style={{
-              ...sharedStyles.actionBtn,
-              fontSize: isMobile ? 10 : 12,
-              padding: isMobile ? "6px 10px" : "8px 20px",
-            }} onClick={() => setModal(true)}>
-              + {isMobile ? "MOV." : "MOVIMIENTO"}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+            <button
+              style={{
+                ...sharedStyles.actionBtn,
+                fontSize: isMobile ? 10 : 12,
+                padding: isMobile ? '6px 10px' : '8px 20px',
+              }}
+              onClick={() => setModal(true)}
+            >
+              + {isMobile ? 'MOV.' : 'MOVIMIENTO'}
             </button>
           </div>
         </div>
@@ -244,62 +366,129 @@ export default function BodegaPage() {
         {/* Contenido */}
         <div style={sharedStyles.tableWrap}>
           {loading ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 32,
-              color: theme.colors.textDim, fontFamily: theme.fonts.mono, fontSize: 14 }}>
-              <span style={{ width: 8, height: 8, background: theme.colors.green,
-                borderRadius: "50%", animation: "blink 1s step-end infinite", display: "inline-block" }} />
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: 32,
+                color: theme.colors.textDim,
+                fontFamily: theme.fonts.mono,
+                fontSize: 14,
+              }}
+            >
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  background: theme.colors.green,
+                  borderRadius: '50%',
+                  animation: 'blink 1s step-end infinite',
+                  display: 'inline-block',
+                }}
+              />
               Cargando suministros...
             </div>
-          ) : tab === "inventario" ? (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          ) : tab === 'inventario' ? (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   {(isMobile
-                    ? ["RECURSO", "CANTIDAD", "ESTADO"]
-                    : ["RECURSO", "UNIDAD", "VITAL", "CANTIDAD", "MÍNIMO", "ESTADO"]
-                  ).map(h => <th key={h} style={sharedStyles.th}>{h}</th>)}
+                    ? ['RECURSO', 'CANTIDAD', 'ESTADO']
+                    : ['RECURSO', 'UNIDAD', 'VITAL', 'CANTIDAD', 'MÍNIMO', 'ESTADO']
+                  ).map((h) => (
+                    <th key={h} style={sharedStyles.th}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, i) => (
                   <tr key={item.id} style={{ animationDelay: `${i * 0.04}s` }}>
-                    <td style={{ ...sharedStyles.td, color: "#e2e8f0", fontWeight: 600 }}>
+                    <td style={{ ...sharedStyles.td, color: '#e2e8f0', fontWeight: 600 }}>
                       {item.recurso}
                       {isMobile && item.es_vital && (
-                        <span style={{ fontSize: 9, color: "#f87171", fontFamily: theme.fonts.mono, marginLeft: 6 }}>⚠ VITAL</span>
+                        <span
+                          style={{
+                            fontSize: 9,
+                            color: '#f87171',
+                            fontFamily: theme.fonts.mono,
+                            marginLeft: 6,
+                          }}
+                        >
+                          ⚠ VITAL
+                        </span>
                       )}
                     </td>
                     {!isMobile && (
-                      <td style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}>{item.unidad}</td>
+                      <td
+                        style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}
+                      >
+                        {item.unidad}
+                      </td>
                     )}
                     {!isMobile && (
                       <td style={sharedStyles.td}>
-                        {item.es_vital
-                          ? <span style={{ color: "#f87171", fontFamily: theme.fonts.mono, fontSize: 11 }}>⚠ VITAL</span>
-                          : <span style={{ color: theme.colors.textDim }}>—</span>}
+                        {item.es_vital ? (
+                          <span
+                            style={{ color: '#f87171', fontFamily: theme.fonts.mono, fontSize: 11 }}
+                          >
+                            ⚠ VITAL
+                          </span>
+                        ) : (
+                          <span style={{ color: theme.colors.textDim }}>—</span>
+                        )}
                       </td>
                     )}
                     <td style={sharedStyles.td}>
-                      <span style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, color: item.bajo_minimo ? "#f87171" : "#4ade80" }}>
+                      <span
+                        style={{
+                          fontSize: isMobile ? 16 : 20,
+                          fontWeight: 700,
+                          color: item.bajo_minimo ? '#f87171' : '#4ade80',
+                        }}
+                      >
                         {item.cantidad_actual}
                       </span>
                     </td>
                     {!isMobile && (
-                      <td style={{ ...sharedStyles.td, color: theme.colors.textDim }}>{item.cantidad_minima_alerta}</td>
+                      <td style={{ ...sharedStyles.td, color: theme.colors.textDim }}>
+                        {item.cantidad_minima_alerta}
+                      </td>
                     )}
                     <td style={sharedStyles.td}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <div style={{ flex: 1, height: 6, background: "rgba(51,65,85,0.5)", borderRadius: 3, overflow: "hidden", minWidth: isMobile ? 40 : 80 }}>
-                          <div style={{
-                            height: "100%",
-                            width: `${Math.min(100, (item.cantidad_actual / (item.cantidad_minima_alerta * 3)) * 100)}%`,
-                            background: item.bajo_minimo ? "#f87171" : "#10b981",
-                            borderRadius: 3, transition: "width 0.5s ease",
-                          }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div
+                          style={{
+                            flex: 1,
+                            height: 6,
+                            background: 'rgba(51,65,85,0.5)',
+                            borderRadius: 3,
+                            overflow: 'hidden',
+                            minWidth: isMobile ? 40 : 80,
+                          }}
+                        >
+                          <div
+                            style={{
+                              height: '100%',
+                              width: `${Math.min(100, (item.cantidad_actual / (item.cantidad_minima_alerta * 3)) * 100)}%`,
+                              background: item.bajo_minimo ? '#f87171' : '#10b981',
+                              borderRadius: 3,
+                              transition: 'width 0.5s ease',
+                            }}
+                          />
                         </div>
                         {!isMobile && (
-                          <span style={{ fontSize: 10, fontFamily: theme.fonts.mono, color: item.bajo_minimo ? "#f87171" : "#4ade80", minWidth: 50 }}>
-                            {item.bajo_minimo ? "BAJO MÍN" : "OK"}
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontFamily: theme.fonts.mono,
+                              color: item.bajo_minimo ? '#f87171' : '#4ade80',
+                              minWidth: 50,
+                            }}
+                          >
+                            {item.bajo_minimo ? 'BAJO MÍN' : 'OK'}
                           </span>
                         )}
                       </div>
@@ -308,35 +497,73 @@ export default function BodegaPage() {
                 ))}
               </tbody>
             </table>
-          ) : tab === "alertas" ? (
+          ) : tab === 'alertas' ? (
             alertas.length === 0 ? (
-              <div style={{ padding: 32, textAlign: "center", color: "#334155", fontFamily: theme.fonts.mono, fontSize: 14 }}>
+              <div
+                style={{
+                  padding: 32,
+                  textAlign: 'center',
+                  color: '#334155',
+                  fontFamily: theme.fonts.mono,
+                  fontSize: 14,
+                }}
+              >
                 ✓ Sin alertas activas
               </div>
             ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    {(isMobile ? ["RECURSO", "CANTIDAD", "MÍNIMO"] : ["RECURSO", "VITAL", "CANTIDAD ACTUAL", "MÍNIMO", "FECHA"]).map(h => (
-                      <th key={h} style={sharedStyles.th}>{h}</th>
+                    {(isMobile
+                      ? ['RECURSO', 'CANTIDAD', 'MÍNIMO']
+                      : ['RECURSO', 'VITAL', 'CANTIDAD ACTUAL', 'MÍNIMO', 'FECHA']
+                    ).map((h) => (
+                      <th key={h} style={sharedStyles.th}>
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {alertas.map((a, i) => (
                     <tr key={a.id} style={{ animationDelay: `${i * 0.04}s` }}>
-                      <td style={{ ...sharedStyles.td, color: "#e2e8f0", fontWeight: 600 }}>{a.recurso}</td>
+                      <td style={{ ...sharedStyles.td, color: '#e2e8f0', fontWeight: 600 }}>
+                        {a.recurso}
+                      </td>
                       {!isMobile && (
                         <td style={sharedStyles.td}>
-                          {a.es_vital ? <span style={{ color: "#f87171", fontFamily: theme.fonts.mono, fontSize: 11 }}>⚠ VITAL</span> : "—"}
+                          {a.es_vital ? (
+                            <span
+                              style={{
+                                color: '#f87171',
+                                fontFamily: theme.fonts.mono,
+                                fontSize: 11,
+                              }}
+                            >
+                              ⚠ VITAL
+                            </span>
+                          ) : (
+                            '—'
+                          )}
                         </td>
                       )}
-                      <td style={{ ...sharedStyles.td, color: "#f87171", fontSize: isMobile ? 16 : 20, fontWeight: 700 }}>
+                      <td
+                        style={{
+                          ...sharedStyles.td,
+                          color: '#f87171',
+                          fontSize: isMobile ? 16 : 20,
+                          fontWeight: 700,
+                        }}
+                      >
                         {a.cantidad_al_momento}
                       </td>
-                      <td style={{ ...sharedStyles.td, color: theme.colors.textDim }}>{a.cantidad_minima}</td>
+                      <td style={{ ...sharedStyles.td, color: theme.colors.textDim }}>
+                        {a.cantidad_minima}
+                      </td>
                       {!isMobile && (
-                        <td style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}>
+                        <td
+                          style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}
+                        >
                           {new Date(a.fecha_generacion).toLocaleDateString()}
                         </td>
                       )}
@@ -346,42 +573,70 @@ export default function BodegaPage() {
               </table>
             )
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   {(isMobile
-                    ? ["RECURSO", "TIPO", "CANT.", "ORIGEN"]
-                    : ["RECURSO", "TIPO", "CANTIDAD", "ORIGEN", "REGISTRADO POR", "FECHA", "NOTA"]
-                  ).map(h => <th key={h} style={sharedStyles.th}>{h}</th>)}
+                    ? ['RECURSO', 'TIPO', 'CANT.', 'ORIGEN']
+                    : ['RECURSO', 'TIPO', 'CANTIDAD', 'ORIGEN', 'REGISTRADO POR', 'FECHA', 'NOTA']
+                  ).map((h) => (
+                    <th key={h} style={sharedStyles.th}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {movimientos.map((m, i) => (
                   <tr key={m.id} style={{ animationDelay: `${i * 0.04}s` }}>
-                    <td style={{ ...sharedStyles.td, color: "#e2e8f0", fontWeight: 600 }}>{m.recurso}</td>
+                    <td style={{ ...sharedStyles.td, color: '#e2e8f0', fontWeight: 600 }}>
+                      {m.recurso}
+                    </td>
                     <td style={sharedStyles.td}>
-                      <span style={{
-                        fontFamily: theme.fonts.mono, fontSize: 10,
-                        color: m.tipo_movimiento === "ENTRADA" ? "#4ade80" : "#f87171",
-                        border: `1px solid ${m.tipo_movimiento === "ENTRADA" ? "#4ade80" : "#f87171"}`,
-                        padding: "2px 6px",
-                      }}>
-                        {m.tipo_movimiento === "ENTRADA" ? "▲" : "▼"} {isMobile ? "" : m.tipo_movimiento}
+                      <span
+                        style={{
+                          fontFamily: theme.fonts.mono,
+                          fontSize: 10,
+                          color: m.tipo_movimiento === 'ENTRADA' ? '#4ade80' : '#f87171',
+                          border: `1px solid ${m.tipo_movimiento === 'ENTRADA' ? '#4ade80' : '#f87171'}`,
+                          padding: '2px 6px',
+                        }}
+                      >
+                        {m.tipo_movimiento === 'ENTRADA' ? '▲' : '▼'}{' '}
+                        {isMobile ? '' : m.tipo_movimiento}
                       </span>
                     </td>
-                    <td style={{ ...sharedStyles.td, fontSize: 16, fontWeight: 700, color: m.tipo_movimiento === "ENTRADA" ? "#4ade80" : "#f87171" }}>
-                      {m.tipo_movimiento === "ENTRADA" ? "+" : "-"}{m.cantidad}
+                    <td
+                      style={{
+                        ...sharedStyles.td,
+                        fontSize: 16,
+                        fontWeight: 700,
+                        color: m.tipo_movimiento === 'ENTRADA' ? '#4ade80' : '#f87171',
+                      }}
+                    >
+                      {m.tipo_movimiento === 'ENTRADA' ? '+' : '-'}
+                      {m.cantidad}
                     </td>
                     <td style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 10 }}>
-                      {isMobile ? m.origen.split("_")[0] : m.origen.replace(/_/g, " ")}
+                      {isMobile ? m.origen.split('_')[0] : m.origen.replace(/_/g, ' ')}
                     </td>
-                    {!isMobile && <td style={{ ...sharedStyles.td, color: theme.colors.textMuted }}>{m.registrado_por}</td>}
                     {!isMobile && (
-                      <td style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}>
+                      <td style={{ ...sharedStyles.td, color: theme.colors.textMuted }}>
+                        {m.registrado_por}
+                      </td>
+                    )}
+                    {!isMobile && (
+                      <td
+                        style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}
+                      >
                         {new Date(m.fecha).toLocaleString()}
                       </td>
                     )}
-                    {!isMobile && <td style={{ ...sharedStyles.td, color: theme.colors.textDim, fontSize: 13 }}>{m.nota ?? "—"}</td>}
+                    {!isMobile && (
+                      <td style={{ ...sharedStyles.td, color: theme.colors.textDim, fontSize: 13 }}>
+                        {m.nota ?? '—'}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -390,7 +645,9 @@ export default function BodegaPage() {
         </div>
       </main>
 
-      {modalOpen && <ModalMovimiento items={items} onClose={() => setModal(false)} onSuccess={cargar} />}
+      {modalOpen && (
+        <ModalMovimiento items={items} onClose={() => setModal(false)} onSuccess={cargar} />
+      )}
     </div>
   )
 }

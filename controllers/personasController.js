@@ -1,9 +1,9 @@
-import pool from "../db/connection.js";
-import { registrarLog } from "../middleware/logger.js";
+import pool from '../db/connection.js'
+import { registrarLog } from '../middleware/logger.js'
 
 export const getPersonas = async (req, res) => {
   try {
-    const campamento_id = req.user.campamento;
+    const campamento_id = req.user.campamento
 
     const { rows } = await pool.query(
       `SELECT
@@ -23,29 +23,31 @@ export const getPersonas = async (req, res) => {
        LEFT JOIN cargo c ON c.id = ac.cargo_id
        WHERE p.campamento_id = $2`,
       [campamento_id, campamento_id]
-    );
+    )
 
-    res.json(rows);
+    res.json(rows)
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error servidor" });
+    console.error(error)
+    res.status(500).json({ error: 'Error servidor' })
   }
-};
+}
 
 export const addPersona = async (req, res) => {
   try {
-    const campamento_id = req.user.campamento;
+    const campamento_id = req.user.campamento
     const {
-      nombre, apellidos, fecha_nacimiento,
-      habilidades_combate, nivel_confianza, estado_salud,
-    } = req.body;
+      nombre,
+      apellidos,
+      fecha_nacimiento,
+      habilidades_combate,
+      nivel_confianza,
+      estado_salud,
+    } = req.body
 
-    const foto_url = req.files?.foto?.[0]
-      ? `/uploads/personas/${req.files.foto[0].filename}`
-      : null;
+    const foto_url = req.files?.foto?.[0] ? `/uploads/personas/${req.files.foto[0].filename}` : null
     const tarjeta_url = req.files?.tarjeta?.[0]
       ? `/uploads/personas/${req.files.tarjeta[0].filename}`
-      : null;
+      : null
 
     const { rows } = await pool.query(
       `INSERT INTO persona
@@ -54,26 +56,35 @@ export const addPersona = async (req, res) => {
          esta_en_campamento, fecha_ingreso, campamento_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, NOW(), $9)
        RETURNING id`,
-      [nombre, apellidos, fecha_nacimiento, foto_url, tarjeta_url,
-       habilidades_combate, nivel_confianza, estado_salud, campamento_id]
-    );
+      [
+        nombre,
+        apellidos,
+        fecha_nacimiento,
+        foto_url,
+        tarjeta_url,
+        habilidades_combate,
+        nivel_confianza,
+        estado_salud,
+        campamento_id,
+      ]
+    )
 
     await registrarLog({
       usuario_id: req.user.id,
       campamento_id,
-      accion: "INGRESO_PERSONA",
-      entidad_afectada: "persona",
+      accion: 'INGRESO_PERSONA',
+      entidad_afectada: 'persona',
       entidad_id: rows[0].id,
       detalle: { nombre, apellidos, estado_salud, foto_url, tarjeta_url },
       ip_origen: req.ip,
-    });
+    })
 
-    res.status(201).json({ mensaje: "Persona agregada", id: rows[0].id });
+    res.status(201).json({ mensaje: 'Persona agregada', id: rows[0].id })
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error servidor" });
+    console.error(error)
+    res.status(500).json({ error: 'Error servidor' })
   }
-};
+}
 
 export const asignarCargoIA = async (req, res) => {
   try {
@@ -85,94 +96,94 @@ export const asignarCargoIA = async (req, res) => {
       `INSERT INTO asignacioncargo
         (persona_id, cargo_id, campamento_id, es_temporal, asignado_por_ia, motivo)
        VALUES ($1, $2, $3, FALSE, TRUE, $4)`,
-      [id, cargo_id, campamento_id, `${razon} | Reglas: ${reglas_aplicadas?.join(", ")}`]
+      [id, cargo_id, campamento_id, `${razon} | Reglas: ${reglas_aplicadas?.join(', ')}`]
     )
 
     await registrarLog({
       usuario_id: req.user.id,
       campamento_id,
-      accion: "ASIGNACION_CARGO_IA",
-      entidad_afectada: "asignacioncargo",
+      accion: 'ASIGNACION_CARGO_IA',
+      entidad_afectada: 'asignacioncargo',
       entidad_id: id,
       detalle: { cargo_id, razon },
       ip_origen: req.ip,
     })
 
-    res.status(201).json({ mensaje: "Cargo asignado correctamente" })
+    res.status(201).json({ mensaje: 'Cargo asignado correctamente' })
   } catch (error) {
     console.error(error)
-    res.status(500).json({ error: "Error servidor" })
+    res.status(500).json({ error: 'Error servidor' })
   }
 }
 
 export const updateEstadoPersona = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { estado_salud } = req.body;
-    const campamento_id = req.user.campamento;
+    const { id } = req.params
+    const { estado_salud } = req.body
+    const campamento_id = req.user.campamento
 
-    const estadosValidos = ["SANO", "HERIDO", "ENFERMO", "MUERTO"];
+    const estadosValidos = ['SANO', 'HERIDO', 'ENFERMO', 'MUERTO']
     if (!estadosValidos.includes(estado_salud)) {
-      return res.status(400).json({ error: "Estado no válido. Use SANO, HERIDO o ENFERMO" });
+      return res.status(400).json({ error: 'Estado no válido. Use SANO, HERIDO o ENFERMO' })
     }
 
     await pool.query(
       `UPDATE persona SET estado_salud = $1
        WHERE id = $2 AND campamento_id = $3`,
       [estado_salud, id, campamento_id]
-    );
+    )
 
     await registrarLog({
       usuario_id: req.user.id,
       campamento_id: campamento_id,
-      accion: "CAMBIO_ESTADO_PERSONA",
-      entidad_afectada: "persona",
+      accion: 'CAMBIO_ESTADO_PERSONA',
+      entidad_afectada: 'persona',
       entidad_id: id,
       detalle: { estado_salud },
       ip_origen: req.ip,
-    });
+    })
 
-    res.json({ mensaje: `Estado actualizado a ${estado_salud}` });
+    res.json({ mensaje: `Estado actualizado a ${estado_salud}` })
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error servidor" });
+    console.error(error)
+    res.status(500).json({ error: 'Error servidor' })
   }
-};
+}
 
 export const moverPersonaRol = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { cargo_id, motivo } = req.body;
-    const campamento_id = req.user.campamento;
+    const { id } = req.params
+    const { cargo_id, motivo } = req.body
+    const campamento_id = req.user.campamento
 
     await pool.query(
       `UPDATE asignacioncargo
        SET cargo_id = $1, es_temporal = TRUE, motivo = $2
        WHERE persona_id = $3 AND campamento_id = $4`,
       [cargo_id, motivo, id, campamento_id]
-    );
+    )
 
     await registrarLog({
       usuario_id: req.user.id,
       campamento_id: campamento_id,
-      accion: "CAMBIO_ROL_PERSONA",
-      entidad_afectada: "asignacioncargo",
+      accion: 'CAMBIO_ROL_PERSONA',
+      entidad_afectada: 'asignacioncargo',
       entidad_id: id,
       detalle: { cargo_id, motivo, es_temporal: true },
       ip_origen: req.ip,
-    });
+    })
 
-    res.json({ mensaje: `Persona ${id} movida temporalmente al cargo ${cargo_id}` });
+    res.json({ mensaje: `Persona ${id} movida temporalmente al cargo ${cargo_id}` })
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error servidor" });
+    console.error(error)
+    res.status(500).json({ error: 'Error servidor' })
   }
-};
+}
 
 export const getPersonaById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const campamento_id = req.user.campamento;
+    const { id } = req.params
+    const campamento_id = req.user.campamento
 
     const { rows } = await pool.query(
       `SELECT
@@ -192,23 +203,23 @@ export const getPersonaById = async (req, res) => {
        LEFT JOIN cargo c ON c.id = ac.cargo_id
        WHERE p.id = $1 AND p.campamento_id = $2`,
       [id, campamento_id]
-    );
+    )
 
     if (rows.length === 0) {
-      return res.status(404).json({ error: "Persona no encontrada" });
+      return res.status(404).json({ error: 'Persona no encontrada' })
     }
 
-    res.json(rows[0]);
+    res.json(rows[0])
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error servidor" });
+    console.error(error)
+    res.status(500).json({ error: 'Error servidor' })
   }
-};
+}
 
 export const getCargosPersona = async (req, res) => {
   try {
-    const { id } = req.params;
-    const campamento_id = req.user.campamento;
+    const { id } = req.params
+    const campamento_id = req.user.campamento
 
     const { rows } = await pool.query(
       `SELECT
@@ -223,11 +234,11 @@ export const getCargosPersona = async (req, res) => {
        JOIN cargo c ON c.id = ac.cargo_id
        WHERE ac.persona_id = $1 AND ac.campamento_id = $2 AND ac.fecha_fin IS NULL`,
       [id, campamento_id]
-    );
+    )
 
-    res.json(rows);
+    res.json(rows)
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error servidor" });
+    console.error(error)
+    res.status(500).json({ error: 'Error servidor' })
   }
-};
+}
