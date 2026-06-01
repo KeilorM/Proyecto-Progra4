@@ -1,38 +1,68 @@
-import { useEffect, useRef, useState } from "react";
-import { getDashboardMetricas } from "../services/api";
-import CampamentoStatus from "./CampamentoStatus";
-import { useIsMobile } from "../hooks/useIsMobile";
+import { useEffect, useRef, useState } from 'react'
+import { getDashboardMetricas } from '../services/api'
+import CampamentoStatus from './CampamentoStatus'
+import { useIsMobile } from '../hooks/useIsMobile'
 
-declare const Chart: any;
+declare const Chart: {
+  new (canvas: HTMLCanvasElement, config: object): { destroy(): void }
+} | undefined
 
 interface Metricas {
-  personas: { total: number; por_estado: Record<string, number> };
-  recursos: { nombre: string; cantidad_actual: number; cantidad_minima_alerta: number; unidad: string }[];
-  alertas_activas: number;
-  exploraciones: Record<string, number>;
-  solicitudes_pendientes: number;
-  movimientos_semana: { dia: string; entradas: number; salidas: number }[];
+  personas: { total: number; por_estado: Record<string, number> }
+  recursos: {
+    nombre: string
+    cantidad_actual: number
+    cantidad_minima_alerta: number
+    unidad: string
+  }[]
+  alertas_activas: number
+  exploraciones: Record<string, number>
+  solicitudes_pendientes: number
+  movimientos_semana: { dia: string; entradas: number; salidas: number }[]
 }
 
-const mono = "'Share Tech Mono', monospace";
-const dim  = "#475569";
-const border = "rgba(30,41,59,0.8)";
+const mono = "'Share Tech Mono', monospace"
+const dim = '#475569'
+const border = 'rgba(30,41,59,0.8)'
 
 const ESTADO_COLOR: Record<string, string> = {
-  SANO: "#4ade80", HERIDO: "#fb923c", ENFERMO: "#facc15", MUERTO: "#94a3b8",
-};
+  SANO: '#4ade80',
+  HERIDO: '#fb923c',
+  ENFERMO: '#facc15',
+  MUERTO: '#94a3b8',
+}
 
-function MetricCard({ label, value, sub, color }: {
-  label: string; value: number | string; sub: string; color: string
+function MetricCard({
+  label,
+  value,
+  sub,
+  color,
+}: {
+  label: string
+  value: number | string
+  sub: string
+  color: string
 }) {
   return (
-    <div style={{
-      background: "rgba(15,23,42,0.8)",
-      border: `1px solid ${border}`,
-      padding: "14px 18px",
-      display: "flex", flexDirection: "column", gap: 4,
-    }}>
-      <div style={{ fontFamily: mono, fontSize: 10, color: dim, letterSpacing: 2, textTransform: "uppercase" }}>
+    <div
+      style={{
+        background: 'rgba(15,23,42,0.8)',
+        border: `1px solid ${border}`,
+        padding: '14px 18px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 4,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: mono,
+          fontSize: 10,
+          color: dim,
+          letterSpacing: 2,
+          textTransform: 'uppercase',
+        }}
+      >
         {label}
       </div>
       <div style={{ fontFamily: mono, fontSize: 32, fontWeight: 700, color, lineHeight: 1 }}>
@@ -40,76 +70,106 @@ function MetricCard({ label, value, sub, color }: {
       </div>
       <div style={{ fontFamily: mono, fontSize: 11, color: dim }}>{sub}</div>
     </div>
-  );
+  )
 }
 
-function BarChart({ label, value, max, color }: {
-  label: string; value: number; max: number; color: string
+function BarChart({
+  label,
+  value,
+  max,
+  color,
+}: {
+  label: string
+  value: number
+  max: number
+  color: string
 }) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span style={{
-        fontFamily: mono, fontSize: 11, color: dim, width: 72,
-        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-      }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span
+        style={{
+          fontFamily: mono,
+          fontSize: 11,
+          color: dim,
+          width: 72,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
         {label}
       </span>
-      <div style={{
-        flex: 1, height: 10, background: "rgba(30,41,59,0.6)",
-        border: `1px solid ${border}`, overflow: "hidden",
-      }}>
-        <div style={{
-          width: `${pct}%`, height: "100%", background: color,
-          transition: "width 0.6s ease",
-        }} />
+      <div
+        style={{
+          flex: 1,
+          height: 10,
+          background: 'rgba(30,41,59,0.6)',
+          border: `1px solid ${border}`,
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            width: `${pct}%`,
+            height: '100%',
+            background: color,
+            transition: 'width 0.6s ease',
+          }}
+        />
       </div>
-      <span style={{ fontFamily: mono, fontSize: 11, color: "#e2e8f0", width: 32, textAlign: "right" }}>
+      <span
+        style={{ fontFamily: mono, fontSize: 11, color: '#e2e8f0', width: 32, textAlign: 'right' }}
+      >
         {value}
       </span>
     </div>
-  );
+  )
 }
 
 export default function MetricasDashboard() {
-  const [data, setData]   = useState<Metricas | null>(null);
-  const [error, setError] = useState("");
-  const chartRef          = useRef<any>(null);
-  const canvasRef         = useRef<HTMLCanvasElement>(null);
-  const isMobile          = useIsMobile();
+  const [data, setData] = useState<Metricas | null>(null)
+  const [error, setError] = useState('')
+  const chartRef = useRef<{ destroy(): void } | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     getDashboardMetricas()
       .then(setData)
-      .catch((e: Error) => setError(e.message));
-  }, []);
+      .catch((e: Error) => setError(e.message))
+  }, [])
 
   useEffect(() => {
-    if (!data || !canvasRef.current || typeof Chart === "undefined") return;
-    if (chartRef.current) chartRef.current.destroy();
+    if (!data || !canvasRef.current || typeof Chart === 'undefined') return
+    if (chartRef.current) chartRef.current.destroy()
 
-    const labels = data.movimientos_semana.map(m =>
-      new Date(m.dia).toLocaleDateString("es-CR", { weekday: "short" })
-    );
+    const labels = data.movimientos_semana.map((m) =>
+      new Date(m.dia).toLocaleDateString('es-CR', { weekday: 'short' })
+    )
 
     chartRef.current = new Chart(canvasRef.current, {
-      type: "line",
+      type: 'line',
       data: {
         labels,
         datasets: [
           {
-            label: "Entradas",
-            data: data.movimientos_semana.map(m => m.entradas),
-            borderColor: "#4ade80",
-            backgroundColor: "rgba(74,222,128,0.06)",
-            tension: 0.4, fill: true, pointRadius: 3,
+            label: 'Entradas',
+            data: data.movimientos_semana.map((m) => m.entradas),
+            borderColor: '#4ade80',
+            backgroundColor: 'rgba(74,222,128,0.06)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 3,
           },
           {
-            label: "Salidas",
-            data: data.movimientos_semana.map(m => m.salidas),
-            borderColor: "#f87171",
-            backgroundColor: "rgba(248,113,113,0.06)",
-            tension: 0.4, fill: true, pointRadius: 3,
+            label: 'Salidas',
+            data: data.movimientos_semana.map((m) => m.salidas),
+            borderColor: '#f87171',
+            backgroundColor: 'rgba(248,113,113,0.06)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 3,
             borderDash: [4, 3],
           },
         ],
@@ -120,73 +180,100 @@ export default function MetricasDashboard() {
         plugins: { legend: { display: false } },
         scales: {
           x: {
-            ticks: { color: "#475569", font: { size: 11, family: mono } },
-            grid: { color: "rgba(30,41,59,0.5)" },
+            ticks: { color: '#475569', font: { size: 11, family: mono } },
+            grid: { color: 'rgba(30,41,59,0.5)' },
           },
           y: {
-            ticks: { color: "#475569", font: { size: 11, family: mono } },
-            grid: { color: "rgba(30,41,59,0.5)" },
+            ticks: { color: '#475569', font: { size: 11, family: mono } },
+            grid: { color: 'rgba(30,41,59,0.5)' },
           },
         },
       },
-    });
+    })
 
-    return () => chartRef.current?.destroy();
-  }, [data]);
+    return () => chartRef.current?.destroy()
+  }, [data])
 
-  if (error) return (
-    <div style={{
-      padding: 16, fontFamily: mono, fontSize: 12, color: "#f87171",
-      border: "1px solid #f87171", background: "rgba(239,68,68,0.06)", marginBottom: 16,
-    }}>
-      ⚠ {error}
-    </div>
-  );
+  if (error)
+    return (
+      <div
+        style={{
+          padding: 16,
+          fontFamily: mono,
+          fontSize: 12,
+          color: '#f87171',
+          border: '1px solid #f87171',
+          background: 'rgba(239,68,68,0.06)',
+          marginBottom: 16,
+        }}
+      >
+        ⚠ {error}
+      </div>
+    )
 
-  if (!data) return (
-    <div style={{
-      padding: 32, fontFamily: mono, fontSize: 13, color: dim,
-      display: "flex", alignItems: "center", gap: 10,
-    }}>
-      <span style={{
-        display: "inline-block", width: 8, height: 8,
-        background: "#10b981", borderRadius: "50%",
-        animation: "blink 1s step-end infinite",
-      }} />
-      Cargando métricas...
-    </div>
-  );
+  if (!data)
+    return (
+      <div
+        style={{
+          padding: 32,
+          fontFamily: mono,
+          fontSize: 13,
+          color: dim,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}
+      >
+        <span
+          style={{
+            display: 'inline-block',
+            width: 8,
+            height: 8,
+            background: '#10b981',
+            borderRadius: '50%',
+            animation: 'blink 1s step-end infinite',
+          }}
+        />
+        Cargando métricas...
+      </div>
+    )
 
-  const maxPersonas = Math.max(...Object.values(data.personas.por_estado), 1);
-  const maxRecurso  = (r: typeof data.recursos[0]) =>
-    Math.max(r.cantidad_actual, r.cantidad_minima_alerta * 2, 1);
-  const colorRecurso = (r: typeof data.recursos[0]) => {
-    const pct = r.cantidad_actual / Math.max(r.cantidad_minima_alerta, 1);
-    return pct <= 1 ? "#f87171" : pct <= 1.5 ? "#facc15" : "#4ade80";
-  };
+  const maxPersonas = Math.max(...Object.values(data.personas.por_estado), 1)
+  const maxRecurso = (r: (typeof data.recursos)[0]) =>
+    Math.max(r.cantidad_actual, r.cantidad_minima_alerta * 2, 1)
+  const colorRecurso = (r: (typeof data.recursos)[0]) => {
+    const pct = r.cantidad_actual / Math.max(r.cantidad_minima_alerta, 1)
+    return pct <= 1 ? '#f87171' : pct <= 1.5 ? '#facc15' : '#4ade80'
+  }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 24 }}>
-
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
       {/* ── GAMIFICACIÓN ── */}
       <CampamentoStatus metricas={data} />
 
       {/* ── Tarjetas métricas ── */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
-        gap: 10,
-      }}>
-        <MetricCard label="Supervivientes" value={data.personas.total} sub="en base" color="#4ade80" />
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gap: 10,
+        }}
+      >
+        <MetricCard
+          label="Supervivientes"
+          value={data.personas.total}
+          sub="en base"
+          color="#4ade80"
+        />
         <MetricCard
           label="Alertas activas"
           value={data.alertas_activas}
           sub="recursos bajos"
-          color={data.alertas_activas > 0 ? "#f87171" : "#4ade80"}
+          color={data.alertas_activas > 0 ? '#f87171' : '#4ade80'}
         />
         <MetricCard
           label="Exploraciones"
-          value={data.exploraciones["EN_CURSO"] ?? 0}
+          value={data.exploraciones['EN_CURSO'] ?? 0}
           sub="en curso"
           color="#38bdf8"
         />
@@ -194,23 +281,36 @@ export default function MetricasDashboard() {
           label="Solicitudes"
           value={data.solicitudes_pendientes}
           sub="pendientes"
-          color={data.solicitudes_pendientes > 0 ? "#facc15" : "#4ade80"}
+          color={data.solicitudes_pendientes > 0 ? '#facc15' : '#4ade80'}
         />
       </div>
 
       {/* ── Barras: personas + recursos ── */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-        gap: 12,
-      }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: 12,
+        }}
+      >
         {/* Personas por estado */}
-        <div style={{ background: "rgba(15,23,42,0.8)", border: `1px solid ${border}`, padding: 16 }}>
-          <div style={{ fontFamily: mono, fontSize: 10, color: dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+        <div
+          style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${border}`, padding: 16 }}
+        >
+          <div
+            style={{
+              fontFamily: mono,
+              fontSize: 10,
+              color: dim,
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              marginBottom: 12,
+            }}
+          >
             Estado de personas
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {(["SANO", "HERIDO", "ENFERMO", "MUERTO"] as const).map(e => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {(['SANO', 'HERIDO', 'ENFERMO', 'MUERTO'] as const).map((e) => (
               <BarChart
                 key={e}
                 label={e.charAt(0) + e.slice(1).toLowerCase()}
@@ -223,12 +323,23 @@ export default function MetricasDashboard() {
         </div>
 
         {/* Recursos */}
-        <div style={{ background: "rgba(15,23,42,0.8)", border: `1px solid ${border}`, padding: 16 }}>
-          <div style={{ fontFamily: mono, fontSize: 10, color: dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+        <div
+          style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${border}`, padding: 16 }}
+        >
+          <div
+            style={{
+              fontFamily: mono,
+              fontSize: 10,
+              color: dim,
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              marginBottom: 12,
+            }}
+          >
             Bodega — nivel actual
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {data.recursos.slice(0, 6).map(r => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {data.recursos.slice(0, 6).map((r) => (
               <BarChart
                 key={r.nombre}
                 label={r.nombre}
@@ -242,22 +353,44 @@ export default function MetricasDashboard() {
       </div>
 
       {/* ── Gráfico de movimientos ── */}
-      <div style={{ background: "rgba(15,23,42,0.8)", border: `1px solid ${border}`, padding: 16 }}>
-        <div style={{ fontFamily: mono, fontSize: 10, color: dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+      <div style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${border}`, padding: 16 }}>
+        <div
+          style={{
+            fontFamily: mono,
+            fontSize: 10,
+            color: dim,
+            letterSpacing: 2,
+            textTransform: 'uppercase',
+            marginBottom: 12,
+          }}
+        >
           Movimientos de bodega — últimos 7 días
         </div>
-        <div style={{ display: "flex", gap: 16, marginBottom: 10 }}>
-          {[{ label: "Entradas", color: "#4ade80" }, { label: "Salidas", color: "#f87171" }].map(l => (
-            <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: mono, fontSize: 11, color: dim }}>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 10 }}>
+          {[
+            { label: 'Entradas', color: '#4ade80' },
+            { label: 'Salidas', color: '#f87171' },
+          ].map((l) => (
+            <div
+              key={l.label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontFamily: mono,
+                fontSize: 11,
+                color: dim,
+              }}
+            >
               <div style={{ width: 10, height: 10, background: l.color }} />
               {l.label}
             </div>
           ))}
         </div>
-        <div style={{ position: "relative", height: isMobile ? 120 : 160 }}>
+        <div style={{ position: 'relative', height: isMobile ? 120 : 160 }}>
           <canvas ref={canvasRef} role="img" aria-label="Movimientos de bodega últimos 7 días" />
         </div>
       </div>
     </div>
-  );
+  )
 }
