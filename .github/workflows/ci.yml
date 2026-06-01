@@ -58,10 +58,29 @@ jobs:
           echo "DB_NAME=campamento_db" >> .env
           echo "JWT_SECRET=secret_para_tests" >> .env
           echo "JWT_EXPIRES=1h" >> .env
+          echo "PORT=3000" >> .env
+          echo "VITE_API_URL=http://localhost:3000" >> .env
+
+      - name: Iniciar servidor backend       
+        run: npm run start &                 
+        env:
+          NODE_ENV: test
+
+      - name: Esperar a que el backend esté listo   
+        run: |
+          echo "Esperando backend en puerto 3000..."
+          for i in $(seq 1 15); do
+            curl -s http://localhost:3000/health && echo "Backend listo" && exit 0
+            echo "Intento $i/15 - esperando..."
+            sleep 3
+          done
+          echo "❌ Backend no respondió a tiempo"
+          exit 1
 
       - name: Correr pruebas E2E
         run: npm run test:e2e
-
+        env:
+          CI: true
       - name: Subir reporte de Playwright
         uses: actions/upload-artifact@v4
         if: always()
