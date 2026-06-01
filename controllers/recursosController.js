@@ -261,7 +261,7 @@ export const procesarConsumoDiario = async (req, res) => {
       [bodega_id]
     );
 
-   // solucionar antes en la bd
+   // solucionar antes en la bd, para que actualice los datos de la bodega
 
 // if (tipoComida.length > 0 && comidaProducida > 0) {
 //   await pool.query(
