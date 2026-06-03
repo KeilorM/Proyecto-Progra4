@@ -49,7 +49,10 @@ export default function TrabajadorDashboard() {
   }
 
   useEffect(() => {
-    cargar()
+    const fetchData = async () => {
+      await cargar()
+    }
+    void fetchData()
   }, [])
 
   return (

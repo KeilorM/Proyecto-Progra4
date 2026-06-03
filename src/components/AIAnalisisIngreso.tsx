@@ -923,7 +923,7 @@ export default function ModalAgregarPersonaIA({
       })
 
       // Actualizar el cargo_sugerido en pantalla con el real
-      reporte.cargo_sugerido = asignacion.cargo_nombre
+      setReporte({ ...reporte, cargo_sugerido: asignacion.cargo_nombre })
 
       // 4. Registrar la asignación de cargo en el backend
       const token = localStorage.getItem('token')

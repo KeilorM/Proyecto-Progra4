@@ -203,7 +203,10 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
-    cargar()
+    const fetchData = async () => {
+      await cargar()
+    }
+    void fetchData()
   }, [])
 
   const handleEstado = async (id: number, estado_salud: string) => {

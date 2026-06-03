@@ -205,7 +205,10 @@ export default function BodegaPage() {
   }
 
   useEffect(() => {
-    cargar()
+    const fetchData = async () => {
+      await cargar()
+    }
+    void fetchData()
   }, [])
 
   const totalVital = items

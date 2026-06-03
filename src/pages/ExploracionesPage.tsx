@@ -541,7 +541,10 @@ export default function ExploracionesPage() {
   }
 
   useEffect(() => {
-    cargar()
+    const fetchData = async () => {
+      await cargar()
+    }
+    void fetchData()
   }, [])
 
   const planificadas = exploraciones.filter((e) => e.estado === 'PLANIFICADA').length
