@@ -3,9 +3,11 @@ import { getDashboardMetricas } from '../services/api'
 import CampamentoStatus from './CampamentoStatus'
 import { useIsMobile } from '../hooks/useIsMobile'
 
-declare const Chart: {
-  new (canvas: HTMLCanvasElement, config: object): { destroy(): void }
-} | undefined
+declare const Chart:
+  | {
+      new (canvas: HTMLCanvasElement, config: object): { destroy(): void }
+    }
+  | undefined
 
 interface Metricas {
   personas: { total: number; por_estado: Record<string, number> }

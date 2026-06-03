@@ -9,12 +9,5 @@
       "addWords": true
     }
   ],
-  "ignorePaths": [
-    "node_modules",
-    "dist",
-    "public",
-    "*.sql",
-    "package-lock.json",
-    ".git"
-  ]
+  "ignorePaths": ["node_modules", "dist", "public", "*.sql", "package-lock.json", ".git"]
 }
