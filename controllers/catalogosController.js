@@ -96,6 +96,8 @@ export const getTraslados = async (req, res) => {
         t.fecha_llegada_real,
         t.detalle_recursos,
         t.raciones_viaje,
+        t.campamento_origen_id,
+        t.campamento_destino_id,
         c_origen.nombre AS campamento_origen,
         c_destino.nombre AS campamento_destino
        FROM traslado t
