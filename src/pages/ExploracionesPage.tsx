@@ -408,6 +408,7 @@ function ModalSolicitud({
     campamento_destino_id: otros[0]?.id ?? 0,
     tipo_solicitud: 'RECURSOS' as 'RECURSOS' | 'PERSONAS',
     descripcion: '',
+    raciones_viaje: 0,
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -417,7 +418,7 @@ function ModalSolicitud({
       await crearSolicitud({
         campamento_destino_id: form.campamento_destino_id,
         tipo_solicitud: form.tipo_solicitud,
-        detalle: { descripcion: form.descripcion },
+        detalle: { descripcion: form.descripcion, raciones_viaje: form.raciones_viaje },
       })
       onClose()
       await onSuccess()
@@ -489,6 +490,16 @@ function ModalSolicitud({
               required
             />
           </div>
+          <div>
+            <label style={sharedStyles.label}>CANTIDAD</label>
+            <input
+              type="number"
+              min={0}
+              style={{ ...sharedStyles.input, marginTop: 4 }}
+              value={form.raciones_viaje}
+              onChange={(e) => setForm((f) => ({ ...f, raciones_viaje: Number(e.target.value) }))}
+            />
+          </div>
           <button type="submit" style={sharedStyles.submitBtn} disabled={saving}>
             {saving ? 'ENVIANDO...' : 'ENVIAR SOLICITUD'}
           </button>
@@ -556,7 +567,6 @@ export default function ExploracionesPage() {
       <PageHeader titulo="CENTRO DE OPERACIONES" subtitulo="Exploraciones y Comunicaciones" />
 
       <main style={{ ...sharedStyles.main, padding: isMobile ? '16px 12px' : '24px 32px' }}>
-        {/* Stats */}
         <div
           style={{
             display: 'grid',
@@ -622,12 +632,7 @@ export default function ExploracionesPage() {
           <div style={sharedStyles.errorBanner}>
             ⚠ {error}
             <button
-              style={{
-                background: 'none',
-                border: 'none',
-                color: theme.colors.red,
-                cursor: 'pointer',
-              }}
+              style={{ background: 'none', border: 'none', color: theme.colors.red, cursor: 'pointer' }}
               onClick={() => setError('')}
             >
               ✕
@@ -635,7 +640,6 @@ export default function ExploracionesPage() {
           </div>
         )}
 
-        {/* Tabs + acciones */}
         <div
           style={{
             display: 'flex',
@@ -655,8 +659,7 @@ export default function ExploracionesPage() {
                 background: tab === t ? 'rgba(16,185,129,0.1)' : 'transparent',
                 color: tab === t ? theme.colors.green : theme.colors.textDim,
                 border: 'none',
-                borderBottom:
-                  tab === t ? `2px solid ${theme.colors.green}` : '2px solid transparent',
+                borderBottom: tab === t ? `2px solid ${theme.colors.green}` : '2px solid transparent',
                 cursor: 'pointer',
                 textTransform: 'uppercase' as const,
               }}
@@ -692,7 +695,6 @@ export default function ExploracionesPage() {
           </div>
         </div>
 
-        {/* Tabla */}
         <div style={sharedStyles.tableWrap}>
           {loading ? (
             <div
@@ -732,7 +734,6 @@ export default function ExploracionesPage() {
                 No hay misiones registradas
               </div>
             ) : isMobile ? (
-              // ── Vista móvil: tarjetas de misión ──
               <div>
                 {exploraciones.map((e, i) => (
                   <div
@@ -746,13 +747,7 @@ export default function ExploracionesPage() {
                       animationDelay: `${i * 0.04}s`,
                     }}
                   >
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                      }}
-                    >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
                         <div style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 14 }}>
                           {e.nombre_mision}
@@ -787,23 +782,13 @@ export default function ExploracionesPage() {
                       }}
                     >
                       <span>📅 {new Date(e.fecha_salida).toLocaleDateString()}</span>
-                      <span>
-                        ⏱ {e.dias_estimados}d +{e.dias_extra_max}
-                      </span>
+                      <span>⏱ {e.dias_estimados}d +{e.dias_extra_max}</span>
                       <span style={{ color: theme.colors.green }}>👤 {e.total_personas}</span>
                     </div>
                     {e.estado === 'EN_CURSO' && (
                       <button
-                        onClick={() => {
-                          setExploracionActiva(e)
-                          setModal('completar')
-                        }}
-                        style={{
-                          ...sharedStyles.actionBtn,
-                          padding: '6px 12px',
-                          fontSize: 11,
-                          alignSelf: 'flex-start',
-                        }}
+                        onClick={() => { setExploracionActiva(e); setModal('completar') }}
+                        style={{ ...sharedStyles.actionBtn, padding: '6px 12px', fontSize: 11, alignSelf: 'flex-start' }}
                       >
                         COMPLETAR MISIÓN
                       </button>
@@ -812,22 +797,11 @@ export default function ExploracionesPage() {
                 ))}
               </div>
             ) : (
-              // ── Vista desktop: tabla ──
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    {[
-                      'MISIÓN',
-                      'FECHA SALIDA',
-                      'DÍAS',
-                      'DÍAS EXTRA',
-                      'EQUIPO',
-                      'ESTADO',
-                      'ACCIÓN',
-                    ].map((h) => (
-                      <th key={h} style={sharedStyles.th}>
-                        {h}
-                      </th>
+                    {['MISIÓN', 'FECHA SALIDA', 'DÍAS', 'DÍAS EXTRA', 'EQUIPO', 'ESTADO', 'ACCIÓN'].map((h) => (
+                      <th key={h} style={sharedStyles.th}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -842,31 +816,15 @@ export default function ExploracionesPage() {
                           </div>
                         )}
                       </td>
-                      <td
-                        style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}
-                      >
+                      <td style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}>
                         {new Date(e.fecha_salida).toLocaleDateString()}
                       </td>
-                      <td style={{ ...sharedStyles.td, textAlign: 'center' }}>
-                        {e.dias_estimados}
-                      </td>
-                      <td
-                        style={{
-                          ...sharedStyles.td,
-                          textAlign: 'center',
-                          color: theme.colors.textDim,
-                        }}
-                      >
+                      <td style={{ ...sharedStyles.td, textAlign: 'center' }}>{e.dias_estimados}</td>
+                      <td style={{ ...sharedStyles.td, textAlign: 'center', color: theme.colors.textDim }}>
                         +{e.dias_extra_max}
                       </td>
                       <td style={{ ...sharedStyles.td, textAlign: 'center' }}>
-                        <span
-                          style={{
-                            fontFamily: theme.fonts.mono,
-                            fontSize: 13,
-                            color: theme.colors.green,
-                          }}
-                        >
+                        <span style={{ fontFamily: theme.fonts.mono, fontSize: 13, color: theme.colors.green }}>
                           {e.total_personas} 👤
                         </span>
                       </td>
@@ -886,10 +844,7 @@ export default function ExploracionesPage() {
                       <td style={sharedStyles.td}>
                         {e.estado === 'EN_CURSO' && (
                           <button
-                            onClick={() => {
-                              setExploracionActiva(e)
-                              setModal('completar')
-                            }}
+                            onClick={() => { setExploracionActiva(e); setModal('completar') }}
                             style={{ ...sharedStyles.actionBtn, padding: '4px 12px', fontSize: 11 }}
                           >
                             COMPLETAR
@@ -902,7 +857,6 @@ export default function ExploracionesPage() {
               </table>
             )
           ) : (
-            // ── Tab solicitudes ──
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
@@ -910,9 +864,7 @@ export default function ExploracionesPage() {
                     ? ['DESTINO', 'TIPO', 'ESTADO']
                     : ['DESTINO', 'TIPO', 'DETALLE', 'ESTADO', 'FECHA']
                   ).map((h) => (
-                    <th key={h} style={sharedStyles.th}>
-                      {h}
-                    </th>
+                    <th key={h} style={sharedStyles.th}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -947,11 +899,9 @@ export default function ExploracionesPage() {
                             fontFamily: theme.fonts.mono,
                             fontSize: 11,
                             color:
-                              s.estado === 'PENDIENTE'
-                                ? '#facc15'
-                                : s.estado === 'APROBADA'
-                                  ? '#4ade80'
-                                  : '#f87171',
+                              s.estado === 'PENDIENTE' ? '#facc15'
+                              : s.estado === 'APROBADA' ? '#4ade80'
+                              : '#f87171',
                             border: `1px solid ${s.estado === 'PENDIENTE' ? '#facc15' : s.estado === 'APROBADA' ? '#4ade80' : '#f87171'}`,
                             padding: '2px 8px',
                           }}
@@ -960,9 +910,7 @@ export default function ExploracionesPage() {
                         </span>
                       </td>
                       {!isMobile && (
-                        <td
-                          style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}
-                        >
+                        <td style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}>
                           {new Date(s.fecha_solicitud).toLocaleDateString()}
                         </td>
                       )}
@@ -986,10 +934,7 @@ export default function ExploracionesPage() {
         <ModalCompletarExploracion
           exploracion={exploracionActiva}
           itemsBodega={itemsBodega}
-          onClose={() => {
-            setModal(null)
-            setExploracionActiva(null)
-          }}
+          onClose={() => { setModal(null); setExploracionActiva(null) }}
           onSuccess={cargar}
         />
       )}

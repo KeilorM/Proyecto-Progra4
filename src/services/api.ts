@@ -276,6 +276,26 @@ export async function getSolicitudesEnviadas() {
   return data
 }
 
+export async function aprobarSalidaTraslado(id: number) {
+  const res = await fetch(`${BASE_URL}/api/v1/campamentos/traslados/${id}/salida`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || 'Error al aprobar salida')
+  return data
+}
+
+export async function aprobarLlegadaTraslado(id: number) {
+  const res = await fetch(`${BASE_URL}/api/v1/campamentos/traslados/${id}/llegada`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || 'Error al aprobar llegada')
+  return data
+}
+
 export async function getTraslados() {
   const res = await fetch(`${BASE_URL}/api/v1/catalogos/traslados`, {
     headers: authHeaders(),

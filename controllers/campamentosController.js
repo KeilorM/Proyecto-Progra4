@@ -86,8 +86,8 @@ export const responderSolicitud = async (req, res) => {
       await pool.query(
         `INSERT INTO traslado
           (solicitud_id, campamento_origen_id, campamento_destino_id, fecha_salida_programada, estado, detalle_recursos, raciones_viaje)
-         VALUES ($1, $2, $3, NOW() + INTERVAL '1 day', 'PENDIENTE_SALIDA', $4, 0)`,
-        [id, solicitud[0].campamento_origen_id, campamento_id, solicitud[0].detalle]
+         VALUES ($1, $2, $3, NOW(), 'PENDIENTE_SALIDA', $4, $5)`,
+        [id, campamento_id, solicitud[0].campamento_origen_id, solicitud[0].detalle, solicitud[0].detalle?.raciones_viaje ?? 0]
       )
     }
 

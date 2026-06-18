@@ -8,7 +8,11 @@ import {
   updateEstadoPersona,
   getSolicitudesRecibidas,
   responderSolicitud,
+  getTraslados,
+  aprobarSalidaTraslado,
+  aprobarLlegadaTraslado,
 } from '../services/api'
+
 import ModalAgregarPersonaIA from '../components/AIAnalisisIngreso'
 import MetricasDashboard from '../components/MetricasDashboard'
 
@@ -23,7 +27,7 @@ interface Solicitud {
   nota_respuesta?: string
 }
 
-type Tab = 'supervivientes' | 'solicitudes'
+type Tab = 'supervivientes' | 'solicitudes' | 'traslados'
 
 interface Persona {
   id: number
@@ -53,6 +57,19 @@ const ESTADO_LABEL: Record<string, string> = {
   ENFERMO: 'Enfermo',
   MUERTO: 'Muerto',
 }
+
+interface Traslado {
+  id: number
+  estado: string
+  campamento_origen: string
+  campamento_destino: string
+  campamento_origen_id: number
+  campamento_destino_id: number
+  fecha_salida_programada: string
+  raciones_viaje: number
+}
+
+type TabTraslado = 'supervivientes' | 'solicitudes' | 'traslados'
 
 // ─── TARJETA MÓVIL DE PERSONA ─────────────────────────────────────────────────
 function PersonaCard({
@@ -187,14 +204,20 @@ export default function AdminDashboard() {
   const [modalOpen, setModal] = useState(false)
   const [tab, setTab] = useState<Tab>('supervivientes')
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([])
+  const [traslados, setTraslados] = useState<Traslado[]>([])
 
   const cargar = async () => {
     try {
       setLoading(true)
       setError('')
-      const [data, sols] = await Promise.all([getPersonas(), getSolicitudesRecibidas()])
+      const [data, sols, trals] = await Promise.all([
+        getPersonas(),
+        getSolicitudesRecibidas(),
+        getTraslados(),
+      ])
       setPersonas(data)
       setSolicitudes(sols)
+      setTraslados(trals)
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message)
     } finally {
@@ -227,7 +250,25 @@ export default function AdminDashboard() {
     }
   }
 
-  return (
+  const handleSalida = async (id: number) => {
+  try {
+    await aprobarSalidaTraslado(id)
+    await cargar()
+  } catch (err: unknown) {
+    if (err instanceof Error) setError(err.message)
+  }
+}
+
+const handleLlegada = async (id: number) => {
+  try {
+    await aprobarLlegadaTraslado(id)
+    await cargar()
+  } catch (err: unknown) {
+    if (err instanceof Error) setError(err.message)
+  }
+}
+
+return (
     <div style={sharedStyles.root}>
       <PageHeader titulo="COMANDO CENTRAL" subtitulo="Gestión de Supervivientes" />
 
@@ -366,7 +407,7 @@ export default function AdminDashboard() {
             gap: isMobile ? 0 : undefined,
           }}
         >
-          {(['supervivientes', 'solicitudes'] as Tab[]).map((t) => (
+          {(['supervivientes', 'solicitudes', 'traslados'] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -458,14 +499,12 @@ export default function AdminDashboard() {
                 No hay supervivientes registrados
               </div>
             ) : isMobile ? (
-              // Vista móvil — tarjetas
               <div>
                 {personas.map((p) => (
                   <PersonaCard key={p.id} p={p} onEstado={handleEstado} />
                 ))}
               </div>
             ) : (
-              // Vista desktop — tabla
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
@@ -509,9 +548,7 @@ export default function AdminDashboard() {
                           </span>
                         )}
                       </td>
-                      <td
-                        style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}
-                      >
+                      <td style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}>
                         {p.cargo ?? '—'}
                       </td>
                       <td style={sharedStyles.td}>
@@ -575,8 +612,7 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             )
-          ) : (
-            // Tab solicitudes
+          ) : tab === 'solicitudes' ? (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
@@ -634,9 +670,7 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                       {!isMobile && (
-                        <td
-                          style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}
-                        >
+                        <td style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}>
                           {new Date(s.fecha_solicitud).toLocaleDateString()}
                         </td>
                       )}
@@ -669,6 +703,125 @@ export default function AdminDashboard() {
                             </button>
                           </div>
                         )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          ) : (
+            // Tab traslados
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  {['ID', 'ORIGEN', 'DESTINO', 'ESTADO', 'FECHA', 'RACIONES', 'ACCIÓN'].map((h) => (
+                    <th key={h} style={sharedStyles.th}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {traslados.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      style={{
+                        ...sharedStyles.td,
+                        textAlign: 'center',
+                        color: '#334155',
+                        fontFamily: theme.fonts.mono,
+                        fontSize: 14,
+                        padding: 32,
+                      }}
+                    >
+                      No hay traslados registrados
+                    </td>
+                  </tr>
+                ) : (
+                  traslados.map((t) => (
+                    <tr key={t.id}>
+                      <td style={sharedStyles.td}>
+                        <span
+                          style={{
+                            fontFamily: theme.fonts.mono,
+                            fontSize: 12,
+                            color: '#334155',
+                            background: 'rgba(51,65,85,0.3)',
+                            padding: '2px 8px',
+                          }}
+                        >
+                          #{t.id}
+                        </span>
+                      </td>
+                      <td style={sharedStyles.td}>{t.campamento_origen}</td>
+                      <td style={sharedStyles.td}>{t.campamento_destino}</td>
+                      <td style={sharedStyles.td}>
+                        <span
+                          style={{
+                            fontFamily: theme.fonts.mono,
+                            fontSize: 11,
+                            color:
+                              t.estado === 'COMPLETADO'
+                                ? '#4ade80'
+                                : t.estado === 'EN_TRANSITO'
+                                  ? '#facc15'
+                                  : '#60a5fa',
+                            border: `1px solid ${t.estado === 'COMPLETADO' ? '#4ade80' : t.estado === 'EN_TRANSITO' ? '#facc15' : '#60a5fa'}`,
+                            padding: '2px 8px',
+                          }}
+                        >
+                          {t.estado}
+                        </span>
+                      </td>
+                      <td style={{ ...sharedStyles.td, fontFamily: theme.fonts.mono, fontSize: 12 }}>
+                        {new Date(t.fecha_salida_programada).toLocaleDateString()}
+                      </td>
+                      <td style={sharedStyles.td}>{t.raciones_viaje}</td>
+                      <td style={sharedStyles.td}>
+                       <div style={{ display: 'flex', gap: 6 }}>
+                        {t.estado === 'PENDIENTE_SALIDA' && t.campamento_origen_id === Number(localStorage.getItem('campamento')) && (
+                          <button
+                            onClick={() => handleSalida(t.id)}
+                            style={{
+                              ...sharedStyles.actionBtn,
+                              padding: '4px 10px',
+                              fontSize: 11,
+                              background: 'rgba(16,185,129,0.15)',
+                            }}
+                          >
+                            ✓ APROBAR SALIDA
+                          </button>
+                        )}
+                        {t.estado === 'PENDIENTE_SALIDA' && t.campamento_origen_id !== Number(localStorage.getItem('campamento')) && (
+                          <span style={{ fontFamily: theme.fonts.mono, fontSize: 11, color: '#94a3b8' }}>
+                            ⏳ ESPERANDO SALIDA
+                          </span>
+                        )}
+                        {t.estado === 'EN_TRANSITO' && t.campamento_destino_id === Number(localStorage.getItem('campamento')) && (
+                          <button
+                            onClick={() => handleLlegada(t.id)}
+                            style={{
+                              ...sharedStyles.actionBtn,
+                              padding: '4px 10px',
+                              fontSize: 11,
+                              background: 'rgba(250,204,21,0.15)',
+                              borderColor: '#facc15',
+                              color: '#facc15',
+                            }}
+                          >
+                            ✓ APROBAR LLEGADA
+                          </button>
+                        )}
+                        {t.estado === 'EN_TRANSITO' && t.campamento_destino_id !== Number(localStorage.getItem('campamento')) && (
+                          <span style={{ fontFamily: theme.fonts.mono, fontSize: 11, color: '#94a3b8' }}>
+                            ⏳ EN TRÁNSITO
+                          </span>
+                        )}
+                        {t.estado === 'COMPLETADO' && (
+                          <span style={{ fontFamily: theme.fonts.mono, fontSize: 11, color: '#4ade80' }}>
+                            ✓ COMPLETADO
+                          </span>
+                        )}
+                      </div>
                       </td>
                     </tr>
                   ))
