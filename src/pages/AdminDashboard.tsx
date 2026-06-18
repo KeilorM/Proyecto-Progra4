@@ -69,8 +69,6 @@ interface Traslado {
   raciones_viaje: number
 }
 
-type TabTraslado = 'supervivientes' | 'solicitudes' | 'traslados'
-
 // ─── TARJETA MÓVIL DE PERSONA ─────────────────────────────────────────────────
 function PersonaCard({
   p,
